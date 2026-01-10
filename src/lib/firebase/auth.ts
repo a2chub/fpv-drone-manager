@@ -96,3 +96,41 @@ export const updateUserSettings = async (
     updatedAt: serverTimestamp(),
   })
 }
+
+export const updateUserProfile = async (
+  userId: string,
+  data: {
+    displayName?: string
+    photoURL?: string | null
+    profile?: {
+      bio?: string
+      location?: string
+      socialLinks?: { twitter?: string; instagram?: string; youtube?: string }
+    }
+  }
+): Promise<void> => {
+  const userRef = doc(db, 'users', userId)
+  const updateData: Record<string, unknown> = {
+    updatedAt: serverTimestamp(),
+  }
+
+  if (data.displayName !== undefined) {
+    updateData.displayName = data.displayName
+  }
+  if (data.photoURL !== undefined) {
+    updateData.photoURL = data.photoURL
+  }
+  if (data.profile !== undefined) {
+    if (data.profile.bio !== undefined) {
+      updateData['profile.bio'] = data.profile.bio
+    }
+    if (data.profile.location !== undefined) {
+      updateData['profile.location'] = data.profile.location
+    }
+    if (data.profile.socialLinks !== undefined) {
+      updateData['profile.socialLinks'] = data.profile.socialLinks
+    }
+  }
+
+  await updateDoc(userRef, updateData)
+}

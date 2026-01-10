@@ -44,7 +44,7 @@ export function EventCard({ event, onEdit, onDelete }: EventCardProps) {
       : `${event.participantCount}人参加`
 
   return (
-    <div className="card overflow-hidden hover:shadow-md transition-shadow">
+    <Link to={`/events/${event.id}`} className="card block overflow-hidden hover:shadow-md transition-shadow">
       {/* Cover Image */}
       <div className="w-full h-40 bg-gray-100 dark:bg-gray-700 overflow-hidden">
         {event.coverImageUrl ? (
@@ -85,11 +85,9 @@ export function EventCard({ event, onEdit, onDelete }: EventCardProps) {
         </div>
 
         {/* Title */}
-        <Link to={`/events/${event.id}`}>
-          <h4 className="font-medium text-gray-900 dark:text-white truncate hover:text-primary-500 transition-colors mb-2">
-            {event.title}
-          </h4>
-        </Link>
+        <h4 className="font-medium text-gray-900 dark:text-white truncate hover:text-primary-500 transition-colors mb-2">
+          {event.title}
+        </h4>
 
         {/* Date */}
         <div className="flex items-center gap-1 text-sm text-gray-500 dark:text-gray-400 mb-1">
@@ -141,7 +139,11 @@ export function EventCard({ event, onEdit, onDelete }: EventCardProps) {
           <div className="flex items-center justify-end gap-1 mt-3 pt-3 border-t border-gray-100 dark:border-gray-700">
             {onEdit && (
               <button
-                onClick={onEdit}
+                onClick={(e) => {
+                  e.preventDefault()
+                  e.stopPropagation()
+                  onEdit()
+                }}
                 className="p-1.5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
                 title="編集"
               >
@@ -157,7 +159,11 @@ export function EventCard({ event, onEdit, onDelete }: EventCardProps) {
             )}
             {onDelete && (
               <button
-                onClick={onDelete}
+                onClick={(e) => {
+                  e.preventDefault()
+                  e.stopPropagation()
+                  onDelete()
+                }}
                 className="p-1.5 text-gray-400 hover:text-red-500 dark:hover:text-red-400 transition-colors"
                 title="削除"
               >
@@ -174,6 +180,6 @@ export function EventCard({ event, onEdit, onDelete }: EventCardProps) {
           </div>
         )}
       </div>
-    </div>
+    </Link>
   )
 }

@@ -39,7 +39,7 @@ export const eventPostService = {
       authorName: author.displayName,
       authorPhotoURL: author.photoURL,
       content: data.content,
-      images: data.images,
+      media: data.media || [],
       isOrganizer,
     })
     return docRef.id

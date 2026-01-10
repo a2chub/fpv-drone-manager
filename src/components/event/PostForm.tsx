@@ -1,8 +1,11 @@
-import { useState } from 'react'
-import type { EventPostFormData } from '@/types'
+import { useState, useCallback } from 'react'
+import { useAuth } from '@/contexts/AuthContext'
+import { useMediaUpload } from '@/hooks/useMediaUpload'
+import { MediaUploader } from '@/components/common/MediaUploader'
+import type { EventPostFormData, MediaItem } from '@/types'
 
 interface PostFormProps {
-  initialData?: Partial<EventPostFormData>
+  initialData?: Partial<EventPostFormData & { images?: string[] }>
   onSubmit: (data: EventPostFormData) => void
   isSubmitting?: boolean
   onCancel?: () => void
@@ -14,9 +17,37 @@ export function PostForm({
   isSubmitting = false,
   onCancel,
 }: PostFormProps) {
+  useAuth() // Auth context needed for user session
   const [content, setContent] = useState(initialData?.content || '')
-  const [imagesText, setImagesText] = useState(initialData?.images?.join(', ') || '')
   const [error, setError] = useState<string | null>(null)
+
+  // 後方互換性: 旧形式のimagesから新形式のmediaへ変換
+  const initialMedia: MediaItem[] = initialData?.media ||
+    (initialData?.images?.map(url => ({ type: 'image' as const, url })) || [])
+
+  const [media, setMedia] = useState<MediaItem[]>(initialMedia)
+
+  const { uploadMultiple, remove, isUploading, error: uploadError } = useMediaUpload({
+    path: 'posts',
+    maxFiles: 10,
+  })
+
+  const handleMediaUpload = useCallback(
+    async (files: File[]): Promise<MediaItem[]> => {
+      const uploadedItems = await uploadMultiple(files)
+      setMedia((prev) => [...prev, ...uploadedItems])
+      return uploadedItems
+    },
+    [uploadMultiple]
+  )
+
+  const handleMediaRemove = useCallback(
+    async (mediaUrl: string): Promise<void> => {
+      await remove(mediaUrl)
+      setMedia((prev) => prev.filter((item) => item.url !== mediaUrl))
+    },
+    [remove]
+  )
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
@@ -27,14 +58,9 @@ export function PostForm({
       return
     }
 
-    const images = imagesText
-      .split(',')
-      .map((url) => url.trim())
-      .filter((url) => url.length > 0)
-
     onSubmit({
       content: content.trim(),
-      images,
+      media,
     })
   }
 
@@ -55,22 +81,16 @@ export function PostForm({
         {error && <p className="mt-1 text-sm text-red-500">{error}</p>}
       </div>
 
-      {/* Images */}
-      <div>
-        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-          画像URL（カンマ区切り）
-        </label>
-        <input
-          type="text"
-          value={imagesText}
-          onChange={(e) => setImagesText(e.target.value)}
-          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-          placeholder="https://example.com/image1.jpg, https://example.com/image2.jpg"
-        />
-        <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-          画像アップロード機能は別途実装されます
-        </p>
-      </div>
+      {/* Media Upload */}
+      <MediaUploader
+        media={media}
+        onUpload={handleMediaUpload}
+        onRemove={handleMediaRemove}
+        isUploading={isUploading}
+        maxMedia={10}
+        label="写真・動画"
+        error={uploadError}
+      />
 
       {/* Actions */}
       <div className="flex justify-end gap-3">
@@ -85,7 +105,7 @@ export function PostForm({
         )}
         <button
           type="submit"
-          disabled={isSubmitting}
+          disabled={isSubmitting || isUploading}
           className="px-4 py-2 bg-primary-500 hover:bg-primary-600 disabled:bg-primary-300 dark:disabled:bg-primary-700 text-white font-medium rounded-lg transition-colors flex items-center gap-2"
         >
           {isSubmitting ? (

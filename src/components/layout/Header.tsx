@@ -178,6 +178,12 @@ export function Header() {
                     {user?.displayName}
                   </span>
                 </div>
+                <Link
+                  to="/settings"
+                  className="text-sm text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition-colors"
+                >
+                  設定
+                </Link>
                 <button
                   onClick={handleSignOut}
                   className="text-sm text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition-colors"

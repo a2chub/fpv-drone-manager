@@ -136,6 +136,24 @@ service cloud.firestore {
         allow create: if isPostAuthorOnCreate();
         // Update/Delete: only post author
         allow update, delete: if isPostAuthor();
+
+        // Media comments subcollection
+        match /mediaComments/{commentId} {
+          function isCommentAuthor() {
+            return isAuthenticated() && resource.data.authorId == request.auth.uid;
+          }
+
+          function isCommentAuthorOnCreate() {
+            return isAuthenticated() && request.resource.data.authorId == request.auth.uid;
+          }
+
+          // Read: authenticated users can read comments
+          allow read: if isAuthenticated();
+          // Create: authenticated users can create comments
+          allow create: if isCommentAuthorOnCreate();
+          // Update/Delete: only comment author
+          allow update, delete: if isCommentAuthor();
+        }
       }
     }
   }

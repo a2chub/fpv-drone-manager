@@ -1,4 +1,5 @@
 import type { Timestamp } from 'firebase/firestore'
+import type { MediaItem } from './media'
 
 // イベントカテゴリー
 export type EventCategory = 'official' | 'local' | 'practice' | 'meetup' | 'other'
@@ -87,7 +88,8 @@ export interface EventPost {
   authorName: string
   authorPhotoURL: string | null
   content: string
-  images: string[]
+  media: MediaItem[]
+  images?: string[] // 後方互換性のため残す
   isOrganizer: boolean
   createdAt: Timestamp
   updatedAt: Timestamp
@@ -96,7 +98,7 @@ export interface EventPost {
 // 事後投稿フォームデータ
 export interface EventPostFormData {
   content: string
-  images: string[]
+  media: MediaItem[]
 }
 
 // カテゴリーラベル

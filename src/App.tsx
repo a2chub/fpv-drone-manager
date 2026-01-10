@@ -11,6 +11,7 @@ import { DroneFormPage } from './pages/drones/DroneFormPage'
 import { RaceListPage, RaceDetailPage, RaceFormPage } from './pages/races'
 import { PartDetailPage } from './pages/parts'
 import { EventListPage, EventDetailPage, EventFormPage, EventAlbumPage } from './pages/events'
+import { SettingsPage } from './pages/settings'
 import { AdminLogin, AdminDashboard } from './pages/admin'
 import { PublicProfile } from './pages/PublicProfile'
 import { PublicDrone } from './pages/PublicDrone'
@@ -60,6 +61,7 @@ function App() {
           <Route path="/events/:eventId" element={<EventDetailPage />} />
           <Route path="/events/:eventId/edit" element={<EventFormPage />} />
           <Route path="/events/:eventId/album" element={<EventAlbumPage />} />
+          <Route path="/settings" element={<SettingsPage />} />
         </Route>
       </Route>
     </Routes>

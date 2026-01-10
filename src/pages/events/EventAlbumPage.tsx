@@ -1,4 +1,3 @@
-import { useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useEvent } from '@/hooks/useEvents'
 import { useEventPosts } from '@/hooks/useEventPosts'
@@ -7,7 +6,6 @@ import { AlbumGallery } from '@/components/event'
 export function EventAlbumPage() {
   const navigate = useNavigate()
   const { eventId } = useParams<{ eventId: string }>()
-  const [selectedImage, setSelectedImage] = useState<string | null>(null)
 
   const { data: event, isLoading: eventLoading } = useEvent(eventId)
   const { data: posts, isLoading: postsLoading } = useEventPosts(eventId)
@@ -38,10 +36,6 @@ export function EventAlbumPage() {
     )
   }
 
-  const handleImageClick = (imageUrl: string) => {
-    setSelectedImage(imageUrl)
-  }
-
   return (
     <div className="max-w-6xl mx-auto px-4 py-8">
       {/* Header */}
@@ -59,40 +53,17 @@ export function EventAlbumPage() {
           {event.title} - アルバム
         </h1>
         <p className="text-gray-600 dark:text-gray-400 mt-1">
-          参加者が投稿した写真のギャラリー
+          参加者が投稿した写真・動画のギャラリー
         </p>
       </div>
 
-      {/* Gallery */}
+      {/* Gallery with integrated lightbox */}
       <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6">
         <AlbumGallery
           posts={posts || []}
-          onImageClick={handleImageClick}
+          eventId={eventId}
         />
       </div>
-
-      {/* Lightbox */}
-      {selectedImage && (
-        <div
-          className="fixed inset-0 bg-black/90 z-50 flex items-center justify-center p-4"
-          onClick={() => setSelectedImage(null)}
-        >
-          <button
-            onClick={() => setSelectedImage(null)}
-            className="absolute top-4 right-4 p-2 text-white/80 hover:text-white transition-colors"
-          >
-            <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
-          <img
-            src={selectedImage}
-            alt="拡大画像"
-            className="max-w-full max-h-full object-contain"
-            onClick={(e) => e.stopPropagation()}
-          />
-        </div>
-      )}
     </div>
   )
 }

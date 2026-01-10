@@ -195,7 +195,7 @@ export function PublicEvent() {
       )}
 
       {/* Album Preview */}
-      {posts && posts.some((p) => p.images.length > 0) && (
+      {posts && posts.some((p) => (p.media?.length || p.images?.length || 0) > 0) && (
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6 mb-6">
           <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
             アルバム

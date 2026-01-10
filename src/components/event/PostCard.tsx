@@ -1,7 +1,10 @@
 import type { EventPost } from '@/types'
+import { normalizeMedia } from '@/types/media'
+import { MediaGallery } from '@/components/common/MediaGallery'
 
 interface PostCardProps {
   post: EventPost
+  eventId?: string
   onEdit?: () => void
   onDelete?: () => void
 }
@@ -17,7 +20,9 @@ function formatDate(timestamp: { toDate: () => Date }): string {
   })
 }
 
-export function PostCard({ post, onEdit, onDelete }: PostCardProps) {
+export function PostCard({ post, eventId, onEdit, onDelete }: PostCardProps) {
+  const media = normalizeMedia(post)
+
   return (
     <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
       {/* Header */}
@@ -94,28 +99,14 @@ export function PostCard({ post, onEdit, onDelete }: PostCardProps) {
         </p>
       </div>
 
-      {/* Images */}
-      {post.images && post.images.length > 0 && (
-        <div className={`grid gap-2 ${
-          post.images.length === 1
-            ? 'grid-cols-1'
-            : post.images.length === 2
-            ? 'grid-cols-2'
-            : 'grid-cols-2 md:grid-cols-3'
-        }`}>
-          {post.images.map((imageUrl, index) => (
-            <div
-              key={index}
-              className="aspect-square rounded-lg overflow-hidden bg-gray-100 dark:bg-gray-700"
-            >
-              <img
-                src={imageUrl}
-                alt={`投稿画像 ${index + 1}`}
-                className="w-full h-full object-cover hover:scale-105 transition-transform cursor-pointer"
-              />
-            </div>
-          ))}
-        </div>
+      {/* Media */}
+      {media.length > 0 && (
+        <MediaGallery
+          media={media}
+          showComments={true}
+          eventId={eventId}
+          postId={post.id}
+        />
       )}
     </div>
   )

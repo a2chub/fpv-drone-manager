@@ -6,7 +6,7 @@ import { useParticipants, useMyParticipation, useJoinEvent, useApproveParticipan
 import { useEventPosts, useCreateEventPost, useDeleteEventPost } from '@/hooks/useEventPosts'
 import { ParticipantList, JoinModal, PostCard, PostForm } from '@/components/event'
 import { EVENT_CATEGORIES, EVENT_STATUSES } from '@/types'
-import type { EventStatus } from '@/types'
+import type { EventStatus, EventPostFormData } from '@/types'
 
 function formatDate(timestamp: { toDate: () => Date }): string {
   const date = timestamp.toDate()
@@ -109,7 +109,7 @@ export function EventDetailPage() {
     await updateStatusMutation.mutateAsync({ eventId, status })
   }
 
-  const handleCreatePost = async (data: { content: string; images: string[] }) => {
+  const handleCreatePost = async (data: EventPostFormData) => {
     if (!eventId) return
     await createPostMutation.mutateAsync({
       eventId,

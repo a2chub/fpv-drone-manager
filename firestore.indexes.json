@@ -25,6 +25,14 @@
         { "fieldPath": "organizerId", "order": "ASCENDING" },
         { "fieldPath": "date", "order": "DESCENDING" }
       ]
+    },
+    {
+      "collectionGroup": "mediaComments",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "mediaIndex", "order": "ASCENDING" },
+        { "fieldPath": "createdAt", "order": "ASCENDING" }
+      ]
     }
   ],
   "fieldOverrides": []
