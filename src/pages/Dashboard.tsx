@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom'
 import { useAuth } from '@/contexts/AuthContext'
 import { useStats } from '@/hooks/useStats'
+import { Calendar } from '@/components/calendar'
 
 export function Dashboard() {
   const { user } = useAuth()
@@ -144,6 +145,14 @@ export function Dashboard() {
           <p className="text-sm text-gray-500 dark:text-gray-400">公開中</p>
         </div>
       </div>
+
+      {/* Activity Calendar */}
+      <section className="mt-8">
+        <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+          活動カレンダー
+        </h2>
+        <Calendar />
+      </section>
 
       {/* Recent Drones */}
       {stats && stats.recentDrones.length > 0 && (
