@@ -14,6 +14,7 @@ import {
   getUserDocument,
   ensureUserDocument,
 } from '@/lib/firebase'
+import { trackEvent, setUserId, setUserProperties, AnalyticsEvents } from '@/lib/analytics'
 import type { User } from '@/types'
 
 interface AuthState {
@@ -96,6 +97,15 @@ export function AuthProvider({ children }: AuthProviderProps) {
         loading: false,
         error: null,
       })
+
+      // GA4: ログインイベントとユーザープロパティを設定
+      if (user) {
+        trackEvent(AnalyticsEvents.LOGIN, { method: 'google' })
+        setUserId(user.id)
+        setUserProperties({
+          user_role: user.role,
+        })
+      }
     } catch (error) {
       setState((prev) => ({
         ...prev,
@@ -117,6 +127,15 @@ export function AuthProvider({ children }: AuthProviderProps) {
         loading: false,
         error: null,
       })
+
+      // GA4: ログインイベントとユーザープロパティを設定
+      if (user) {
+        trackEvent(AnalyticsEvents.LOGIN, { method: 'email' })
+        setUserId(user.id)
+        setUserProperties({
+          user_role: user.role,
+        })
+      }
     } catch (error) {
       setState((prev) => ({
         ...prev,
@@ -129,6 +148,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
   const signOut = async () => {
     try {
+      // GA4: ログアウトイベントを送信
+      trackEvent(AnalyticsEvents.LOGOUT)
+
       await firebaseSignOut()
       setState({
         user: null,
@@ -136,6 +158,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
         loading: false,
         error: null,
       })
+
+      // GA4: ユーザーIDをクリア
+      setUserId(null)
     } catch (error) {
       setState((prev) => ({
         ...prev,

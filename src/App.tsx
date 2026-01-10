@@ -10,12 +10,18 @@ import { DroneDetailPage } from './pages/drones/DroneDetailPage'
 import { DroneFormPage } from './pages/drones/DroneFormPage'
 import { RaceListPage, RaceDetailPage, RaceFormPage } from './pages/races'
 import { PartDetailPage } from './pages/parts'
+import { EventListPage, EventDetailPage, EventFormPage, EventAlbumPage } from './pages/events'
 import { AdminLogin, AdminDashboard } from './pages/admin'
 import { PublicProfile } from './pages/PublicProfile'
 import { PublicDrone } from './pages/PublicDrone'
 import { PublicRace } from './pages/PublicRace'
+import { PublicEvent } from './pages/PublicEvent'
+import { usePageTracking } from './hooks/usePageTracking'
 
 function App() {
+  // ページビュー追跡
+  usePageTracking()
+
   return (
     <Routes>
       {/* Admin routes (outside Layout) */}
@@ -34,6 +40,9 @@ function App() {
         <Route path="/u/:userId/drones/:droneId" element={<PublicDrone />} />
         <Route path="/u/:userId/races/:raceId" element={<PublicRace />} />
 
+        {/* Public event route */}
+        <Route path="/e/:eventId" element={<PublicEvent />} />
+
         {/* Protected routes */}
         <Route element={<AuthGuard />}>
           <Route path="/dashboard" element={<Dashboard />} />
@@ -46,6 +55,11 @@ function App() {
           <Route path="/races/new" element={<RaceFormPage />} />
           <Route path="/races/:raceId" element={<RaceDetailPage />} />
           <Route path="/races/:raceId/edit" element={<RaceFormPage />} />
+          <Route path="/events" element={<EventListPage />} />
+          <Route path="/events/new" element={<EventFormPage />} />
+          <Route path="/events/:eventId" element={<EventDetailPage />} />
+          <Route path="/events/:eventId/edit" element={<EventFormPage />} />
+          <Route path="/events/:eventId/album" element={<EventAlbumPage />} />
         </Route>
       </Route>
     </Routes>

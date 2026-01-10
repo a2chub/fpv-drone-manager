@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react"
 import { Link, useLocation } from "react-router-dom"
 import { motion } from "framer-motion"
-import { Home, Plane, Flag, type LucideIcon } from "lucide-react"
+import { Home, Plane, Flag, Calendar, type LucideIcon } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 interface NavItem {
@@ -87,6 +87,7 @@ export const defaultNavItems: NavItem[] = [
   { name: "ダッシュボード", url: "/dashboard", icon: Home },
   { name: "機体", url: "/drones", icon: Plane },
   { name: "レース", url: "/races", icon: Flag },
+  { name: "イベント", url: "/events", icon: Calendar },
 ]
 
 export type { NavItem }

@@ -72,5 +72,71 @@ service cloud.firestore {
       // Only owner or admin can write
       allow write: if isOwner(userId) || isAdmin();
     }
+
+    // Race Events collection (top-level for public search)
+    match /raceEvents/{eventId} {
+      // Helper to check if user is organizer
+      function isOrganizer() {
+        return isAuthenticated() && resource.data.organizerId == request.auth.uid;
+      }
+
+      function isOrganizerOnCreate() {
+        return isAuthenticated() && request.resource.data.organizerId == request.auth.uid;
+      }
+
+      // Read: public events are readable by authenticated users, private events only by organizer
+      allow read: if isAuthenticated() &&
+                    (resource.data.visibility == 'public' || isOrganizer());
+      // Create: authenticated users can create (must be organizer)
+      allow create: if isAuthenticated() && isOrganizerOnCreate();
+      // Update/Delete: only organizer
+      allow update, delete: if isOrganizer();
+
+      // Participants subcollection
+      match /participants/{participantId} {
+        function getEventOrganizerId() {
+          return get(/databases/$(database)/documents/raceEvents/$(eventId)).data.organizerId;
+        }
+
+        function isEventOrganizer() {
+          return isAuthenticated() && getEventOrganizerId() == request.auth.uid;
+        }
+
+        function isParticipantOwner() {
+          return isAuthenticated() && resource.data.userId == request.auth.uid;
+        }
+
+        function isParticipantOwnerOnCreate() {
+          return isAuthenticated() && request.resource.data.userId == request.auth.uid;
+        }
+
+        // Read: organizer can see all, participant can see their own
+        allow read: if isEventOrganizer() || isParticipantOwner();
+        // Create: authenticated users can register themselves
+        allow create: if isParticipantOwnerOnCreate();
+        // Update: organizer (approve/reject) or participant owner (cancel, link race)
+        allow update: if isEventOrganizer() || isParticipantOwner();
+        // Delete: only participant owner can delete their own
+        allow delete: if isParticipantOwner();
+      }
+
+      // Posts subcollection
+      match /posts/{postId} {
+        function isPostAuthor() {
+          return isAuthenticated() && resource.data.authorId == request.auth.uid;
+        }
+
+        function isPostAuthorOnCreate() {
+          return isAuthenticated() && request.resource.data.authorId == request.auth.uid;
+        }
+
+        // Read: authenticated users can read posts
+        allow read: if isAuthenticated();
+        // Create: authenticated users can create posts
+        allow create: if isPostAuthorOnCreate();
+        // Update/Delete: only post author
+        allow update, delete: if isPostAuthor();
+      }
+    }
   }
 }

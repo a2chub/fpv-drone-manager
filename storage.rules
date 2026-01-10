@@ -28,5 +28,13 @@ service firebase.storage {
       allow read: if true;
       allow write: if isOwner(userId) && isValidImage();
     }
+
+    // Event images folder
+    match /events/{eventId}/{allPaths=**} {
+      // Authenticated users can read event images
+      allow read: if isAuthenticated();
+      // Authenticated users can write valid images
+      allow write: if isAuthenticated() && isValidImage();
+    }
   }
 }

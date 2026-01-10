@@ -5,7 +5,11 @@ import { BrowserRouter } from 'react-router-dom'
 import App from './App'
 import { AuthProvider } from './contexts/AuthContext'
 import { ThemeProvider } from './contexts/ThemeContext'
+import { initGA4 } from './lib/analytics'
 import './styles/globals.css'
+
+// GA4初期化
+initGA4()
 
 const queryClient = new QueryClient({
   defaultOptions: {

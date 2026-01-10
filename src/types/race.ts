@@ -22,6 +22,7 @@ export interface Race {
   impressions: string
   images: string[]
   isPublic: boolean
+  eventId?: string | null // レースイベントとの紐付け
   createdAt: Timestamp
   updatedAt: Timestamp
 }
