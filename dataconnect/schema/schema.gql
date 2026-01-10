@@ -1,0 +1,51 @@
+type User @table {
+  displayName: String!
+  createdAt: Timestamp!
+  email: String
+  photoUrl: String
+}
+
+type Drone @table {
+  name: String!
+  model: String!
+  createdAt: Timestamp!
+  user: User
+  frameSize: String
+  notes: String
+  lastFlightDate: Date
+  totalFlightTime: Int
+}
+
+type Component @table {
+  name: String!
+  type: String!
+  createdAt: Timestamp!
+  user: User
+  manufacturer: String
+  modelNumber: String
+  serialNumber: String
+  purchaseDate: Date
+  notes: String
+  totalFlightTime: Int
+}
+
+type DroneComponent @table(key: ["drone", "component", "installedDate"]) {
+  drone: Drone!
+  component: Component!
+  installedDate: Date!
+  removedDate: Date
+  notes: String
+}
+
+type Flight @table {
+  flightDate: Date!
+  durationMinutes: Int!
+  createdAt: Timestamp!
+  drone: Drone
+  user: User
+  location: String
+  weatherConditions: String
+  notes: String
+  batteryUsed: String
+  successful: Boolean
+}

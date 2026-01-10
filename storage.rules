@@ -1,0 +1,32 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    // Helper functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    function isValidImage() {
+      return request.resource.contentType.matches('image/.*') &&
+             request.resource.size < 10 * 1024 * 1024; // 10MB limit
+    }
+
+    // User's private images folder
+    match /users/{userId}/{allPaths=**} {
+      // Authenticated users can read
+      allow read: if isAuthenticated();
+      // Only owner can write valid images
+      allow write: if isOwner(userId) && isValidImage();
+    }
+
+    // Public profile images (anyone can read)
+    match /public/{userId}/{allPaths=**} {
+      allow read: if true;
+      allow write: if isOwner(userId) && isValidImage();
+    }
+  }
+}

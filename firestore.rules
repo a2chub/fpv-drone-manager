@@ -1,0 +1,76 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Helper functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    function isAdmin() {
+      return isAuthenticated() &&
+             get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+    }
+
+    function isPublicData() {
+      return resource.data.isPublic == true;
+    }
+
+    // Users collection
+    match /users/{userId} {
+      // Own data: read/write
+      allow read, write: if isOwner(userId);
+      // Admin can read all
+      allow read: if isAdmin();
+
+      // Drones subcollection
+      match /drones/{droneId} {
+        allow read: if isOwner(userId) ||
+                       (isAuthenticated() && isPublicData()) ||
+                       isAdmin();
+        allow write: if isOwner(userId);
+
+        // Parts subcollection
+        match /parts/{partId} {
+          allow read: if isOwner(userId) ||
+                         (isAuthenticated() && isPublicData()) ||
+                         isAdmin();
+          allow write: if isOwner(userId);
+
+          // Part histories subcollection
+          match /histories/{historyId} {
+            allow read: if isOwner(userId) ||
+                           (isAuthenticated() && isPublicData()) ||
+                           isAdmin();
+            allow write: if isOwner(userId);
+          }
+        }
+
+        // Race links subcollection
+        match /raceLinks/{linkId} {
+          allow read: if isOwner(userId) || isAdmin();
+          allow write: if isOwner(userId);
+        }
+      }
+
+      // Races subcollection
+      match /races/{raceId} {
+        allow read: if isOwner(userId) ||
+                       (isAuthenticated() && isPublicData()) ||
+                       isAdmin();
+        allow write: if isOwner(userId);
+      }
+    }
+
+    // Public profiles collection (readable by anyone)
+    match /publicProfiles/{userId} {
+      // Anyone can read public profiles
+      allow read: if true;
+      // Only owner or admin can write
+      allow write: if isOwner(userId) || isAdmin();
+    }
+  }
+}

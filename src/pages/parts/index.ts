@@ -1,0 +1,1 @@
+export { PartDetailPage } from './PartDetailPage'
