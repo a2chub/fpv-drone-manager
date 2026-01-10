@@ -1,0 +1,183 @@
+# Dependencies
+node_modules
+.pnp
+.pnp.js
+
+# Testing
+coverage
+.nyc_output
+
+# Build
+dist
+dist-ssr
+build
+*.local
+
+# ===========================================
+# SECURITY - Environment & Secrets
+# ===========================================
+
+# Environment variables (CRITICAL - contains API keys)
+.env
+.env.*
+!.env.example
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Firebase service account keys (CRITICAL - never commit these)
+*-firebase-adminsdk-*.json
+serviceAccountKey.json
+service-account*.json
+firebase-adminsdk*.json
+*-credentials.json
+
+# Google Cloud credentials
+gcloud-service-key.json
+google-credentials.json
+*.pem
+*.key
+*.p12
+
+# Other secrets and credentials
+secrets/
+.secrets
+*.secret
+credentials.json
+auth.json
+config.local.json
+private/
+*.private.*
+
+# ===========================================
+# Firebase
+# ===========================================
+
+.firebase
+.firebaserc.local
+firebase-debug.log
+firebase-debug.*.log
+ui-debug.log
+firestore-debug.log
+database-debug.log
+pubsub-debug.log
+storage-debug.log
+
+# Firebase emulator data (may contain sensitive test data)
+.firebase-emulator/
+emulator-data/
+firebase-export*/
+
+# Data Connect
+dataconnect/.dataconnect
+dataconnect-debug.log
+
+# ===========================================
+# Editor & IDE
+# ===========================================
+
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json.example
+.idea
+*.swp
+*.swo
+*.sw?
+*.sublime-workspace
+*.sublime-project
+.project
+.classpath
+.settings/
+
+# ===========================================
+# OS Files
+# ===========================================
+
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+desktop.ini
+
+# ===========================================
+# Logs
+# ===========================================
+
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# ===========================================
+# TypeScript
+# ===========================================
+
+*.tsbuildinfo
+tsconfig.tsbuildinfo
+
+# ===========================================
+# Cache & Temp
+# ===========================================
+
+.cache
+.temp
+.tmp
+*.tmp
+*.temp
+.eslintcache
+.parcel-cache
+.turbo
+
+# Vite
+.vite/
+
+# ===========================================
+# Backup files
+# ===========================================
+
+*.bak
+*.backup
+*.old
+*~
+
+# ===========================================
+# Test & Debug
+# ===========================================
+
+# Test snapshots (optional, uncomment if not versioning)
+# __snapshots__/
+
+# Debug files
+*.dump
+*.heapsnapshot
+
+# ===========================================
+# Misc
+# ===========================================
+
+# Cursor AI
+.cursorindexingignore
+.cursor/
+
+# SpecStory (AI conversation logs - may contain sensitive context)
+.specstory/
+
+# Local configuration overrides
+*.local.json
+*.local.yaml
+*.local.yml
+
+# Uploaded/generated files
+uploads/
+generated/
+
+# Package manager locks (choose one and uncomment others if needed)
+# yarn.lock
+# pnpm-lock.yaml
