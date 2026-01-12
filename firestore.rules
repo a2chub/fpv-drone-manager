@@ -27,6 +27,9 @@ service cloud.firestore {
       allow read: if isAdmin();
       // Public profiles can be read by anyone
       allow read: if resource.data.settings.isProfilePublic == true;
+      // Allow updating followersCount by other authenticated users (for follow/unfollow)
+      allow update: if isAuthenticated() &&
+                       request.resource.data.diff(resource.data).affectedKeys().hasOnly(['followersCount']);
 
       // Drones subcollection
       match /drones/{droneId} {
@@ -64,6 +67,47 @@ service cloud.firestore {
                        isPublicData() ||
                        isAdmin();
         allow write: if isOwner(userId);
+      }
+
+      // Following subcollection
+      match /following/{targetUserId} {
+        // Owner can read/write their following list
+        allow read: if isAuthenticated();
+        allow write: if isOwner(userId);
+      }
+
+      // Followers subcollection
+      match /followers/{followerUserId} {
+        // Anyone authenticated can read followers
+        allow read: if isAuthenticated();
+        // Only the follower can add/remove themselves from someone's followers
+        allow write: if isAuthenticated() && request.auth.uid == followerUserId;
+      }
+
+      // Profile Comments subcollection
+      match /profileComments/{commentId} {
+        function isCommentAuthor() {
+          return isAuthenticated() && resource.data.authorId == request.auth.uid;
+        }
+
+        function isCommentAuthorOnCreate() {
+          return isAuthenticated() && request.resource.data.authorId == request.auth.uid;
+        }
+
+        function isProfileOwner() {
+          return isAuthenticated() && request.auth.uid == userId;
+        }
+
+        // Read: anyone authenticated can read non-deleted comments
+        allow read: if isAuthenticated() && resource.data.isDeleted == false;
+        // Profile owner can read all (including deleted for moderation)
+        allow read: if isProfileOwner();
+        // Create: authenticated users can create comments
+        allow create: if isCommentAuthorOnCreate();
+        // Update: comment author or profile owner (for soft delete)
+        allow update: if isCommentAuthor() || isProfileOwner();
+        // Hard delete: not allowed (use soft delete instead)
+        allow delete: if false;
       }
     }
 

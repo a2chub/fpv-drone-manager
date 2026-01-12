@@ -1,4 +1,3 @@
-import type { ReactNode } from 'react'
 import { useState, useRef, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '@/contexts/AuthContext'
@@ -48,16 +47,16 @@ function ComputerIcon({ className }: { className?: string }) {
 
 export function Header() {
   const { user, isAuthenticated, signOut } = useAuth()
-  const { theme, themeMode, setThemeMode } = useTheme()
+  const { themeMode, setThemeMode } = useTheme()
   const navigate = useNavigate()
-  const [isThemeMenuOpen, setIsThemeMenuOpen] = useState(false)
-  const themeMenuRef = useRef<HTMLDivElement>(null)
+  const [isUserMenuOpen, setIsUserMenuOpen] = useState(false)
+  const userMenuRef = useRef<HTMLDivElement>(null)
 
   // Close menu when clicking outside
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
-      if (themeMenuRef.current && !themeMenuRef.current.contains(event.target as Node)) {
-        setIsThemeMenuOpen(false)
+      if (userMenuRef.current && !userMenuRef.current.contains(event.target as Node)) {
+        setIsUserMenuOpen(false)
       }
     }
     document.addEventListener('mousedown', handleClickOutside)
@@ -66,26 +65,10 @@ export function Header() {
 
   const handleThemeChange = async (mode: ThemeMode) => {
     await setThemeMode(mode)
-    setIsThemeMenuOpen(false)
-  }
-
-  function getCurrentIcon(): ReactNode {
-    if (themeMode === 'system') {
-      return <ComputerIcon className="w-5 h-5" />
-    }
-    if (theme === 'dark') {
-      return <MoonIcon className="w-5 h-5" />
-    }
-    return <SunIcon className="w-5 h-5" />
-  }
-
-  function getThemeButtonClass(mode: ThemeMode): string {
-    const baseClass = 'w-full flex items-center space-x-2 px-4 py-2 text-sm text-left hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors'
-    const activeClass = themeMode === mode ? 'text-primary-500' : 'text-gray-700 dark:text-gray-300'
-    return `${baseClass} ${activeClass}`
   }
 
   const handleSignOut = async () => {
+    setIsUserMenuOpen(false)
     await signOut()
     navigate('/')
   }
@@ -119,48 +102,15 @@ export function Header() {
             <NavBar items={defaultNavItems} />
           )}
 
-          {/* Theme toggle and Auth section */}
-          <div className="flex items-center space-x-4">
-            {/* Theme toggle dropdown */}
-            <div className="relative" ref={themeMenuRef}>
-              <button
-                onClick={() => setIsThemeMenuOpen(!isThemeMenuOpen)}
-                className="p-2 rounded-lg text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-                aria-label="テーマを切り替え"
-              >
-                {getCurrentIcon()}
-              </button>
-
-              {isThemeMenuOpen && (
-                <div className="absolute right-0 mt-2 w-36 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg py-1 z-50">
-                  <button
-                    onClick={() => handleThemeChange('light')}
-                    className={getThemeButtonClass('light')}
-                  >
-                    <SunIcon className="w-4 h-4" />
-                    <span>ライト</span>
-                  </button>
-                  <button
-                    onClick={() => handleThemeChange('dark')}
-                    className={getThemeButtonClass('dark')}
-                  >
-                    <MoonIcon className="w-4 h-4" />
-                    <span>ダーク</span>
-                  </button>
-                  <button
-                    onClick={() => handleThemeChange('system')}
-                    className={getThemeButtonClass('system')}
-                  >
-                    <ComputerIcon className="w-4 h-4" />
-                    <span>システム</span>
-                  </button>
-                </div>
-              )}
-            </div>
-
+          {/* User menu */}
+          <div className="flex items-center">
             {isAuthenticated ? (
-              <div className="flex items-center space-x-4">
-                <div className="flex items-center space-x-2">
+              <div className="relative" ref={userMenuRef}>
+                <button
+                  onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
+                  className="flex items-center space-x-2 p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                  aria-label="ユーザーメニュー"
+                >
                   {user?.photoURL ? (
                     <img
                       src={user.photoURL}
@@ -177,19 +127,88 @@ export function Header() {
                   <span className="hidden sm:block text-sm text-gray-700 dark:text-gray-300">
                     {user?.displayName}
                   </span>
-                </div>
-                <Link
-                  to="/settings"
-                  className="text-sm text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition-colors"
-                >
-                  設定
-                </Link>
-                <button
-                  onClick={handleSignOut}
-                  className="text-sm text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition-colors"
-                >
-                  ログアウト
+                  <svg
+                    className="w-4 h-4 text-gray-500 dark:text-gray-400"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
                 </button>
+
+                {isUserMenuOpen && (
+                  <div className="absolute right-0 mt-2 w-56 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg py-1 z-50">
+                    {/* Profile link */}
+                    <Link
+                      to={`/u/${user?.id}`}
+                      onClick={() => setIsUserMenuOpen(false)}
+                      className="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                    >
+                      プロフィールを見る
+                    </Link>
+
+                    {/* Settings link */}
+                    <Link
+                      to="/settings"
+                      onClick={() => setIsUserMenuOpen(false)}
+                      className="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                    >
+                      設定
+                    </Link>
+
+                    {/* Divider */}
+                    <div className="border-t border-gray-200 dark:border-gray-700 my-1" />
+
+                    {/* Theme section */}
+                    <div className="px-4 py-2">
+                      <div className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-2">テーマ</div>
+                      <div className="space-y-1">
+                        <button
+                          onClick={() => handleThemeChange('light')}
+                          className="w-full flex items-center space-x-2 px-2 py-1.5 text-sm text-left rounded hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                        >
+                          <span className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${themeMode === 'light' ? 'border-primary-500' : 'border-gray-300 dark:border-gray-600'}`}>
+                            {themeMode === 'light' && <span className="w-2 h-2 rounded-full bg-primary-500" />}
+                          </span>
+                          <SunIcon className="w-4 h-4 text-gray-600 dark:text-gray-400" />
+                          <span className="text-gray-700 dark:text-gray-300">ライト</span>
+                        </button>
+                        <button
+                          onClick={() => handleThemeChange('dark')}
+                          className="w-full flex items-center space-x-2 px-2 py-1.5 text-sm text-left rounded hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                        >
+                          <span className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${themeMode === 'dark' ? 'border-primary-500' : 'border-gray-300 dark:border-gray-600'}`}>
+                            {themeMode === 'dark' && <span className="w-2 h-2 rounded-full bg-primary-500" />}
+                          </span>
+                          <MoonIcon className="w-4 h-4 text-gray-600 dark:text-gray-400" />
+                          <span className="text-gray-700 dark:text-gray-300">ダーク</span>
+                        </button>
+                        <button
+                          onClick={() => handleThemeChange('system')}
+                          className="w-full flex items-center space-x-2 px-2 py-1.5 text-sm text-left rounded hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                        >
+                          <span className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${themeMode === 'system' ? 'border-primary-500' : 'border-gray-300 dark:border-gray-600'}`}>
+                            {themeMode === 'system' && <span className="w-2 h-2 rounded-full bg-primary-500" />}
+                          </span>
+                          <ComputerIcon className="w-4 h-4 text-gray-600 dark:text-gray-400" />
+                          <span className="text-gray-700 dark:text-gray-300">システム</span>
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Divider */}
+                    <div className="border-t border-gray-200 dark:border-gray-700 my-1" />
+
+                    {/* Logout */}
+                    <button
+                      onClick={handleSignOut}
+                      className="w-full px-4 py-2 text-sm text-left text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                    >
+                      ログアウト
+                    </button>
+                  </div>
+                )}
               </div>
             ) : (
               <Link

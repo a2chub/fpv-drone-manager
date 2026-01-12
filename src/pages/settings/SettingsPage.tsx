@@ -19,6 +19,7 @@ export function SettingsPage() {
   const [photoURL, setPhotoURL] = useState(user?.photoURL || '')
   const [isProfilePublic, setIsProfilePublic] = useState(user?.settings?.isProfilePublic ?? true)
   const [showEventHistory, setShowEventHistory] = useState(user?.settings?.showEventHistory ?? false)
+  const [commentApprovalRequired, setCommentApprovalRequired] = useState(user?.settings?.commentApprovalRequired ?? false)
   const [isSaving, setIsSaving] = useState(false)
   const [isSavingPrivacy, setIsSavingPrivacy] = useState(false)
   const [saveSuccess, setSaveSuccess] = useState(false)
@@ -38,6 +39,7 @@ export function SettingsPage() {
       setPhotoURL(user.photoURL || '')
       setIsProfilePublic(user.settings?.isProfilePublic ?? true)
       setShowEventHistory(user.settings?.showEventHistory ?? false)
+      setCommentApprovalRequired(user.settings?.commentApprovalRequired ?? false)
     }
   }, [user])
 
@@ -98,6 +100,7 @@ export function SettingsPage() {
         ...user.settings,
         isProfilePublic,
         showEventHistory,
+        commentApprovalRequired,
       })
 
       setPrivacySaveSuccess(true)
@@ -330,6 +333,24 @@ export function SettingsPage() {
               </span>
               <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
                 オンにすると、過去に参加したイベントがプロフィールに表示されます。各イベントの公開/非公開は個別に設定できます。
+              </p>
+            </div>
+          </label>
+
+          {/* Comment approval setting */}
+          <label className="flex items-start gap-3 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={commentApprovalRequired}
+              onChange={(e) => setCommentApprovalRequired(e.target.checked)}
+              className="mt-1 w-5 h-5 text-primary-600 bg-gray-100 border-gray-300 rounded focus:ring-primary-500 dark:focus:ring-primary-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
+            />
+            <div>
+              <span className="text-gray-900 dark:text-white font-medium">
+                プロフィールコメントの承認を必須にする
+              </span>
+              <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                オンにすると、他のユーザーからのコメントは承認後に表示されます。オフの場合は即座に公開されます。
               </p>
             </div>
           </label>

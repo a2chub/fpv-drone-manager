@@ -2,6 +2,7 @@ import { useParams, Link } from 'react-router-dom'
 import { usePublicUser, usePublicDrones, usePublicRaces, usePublicEventHistory } from '@/hooks/usePublicData'
 import { useAuth } from '@/contexts/AuthContext'
 import { ContentGate } from '@/components/common'
+import { FollowButton, ProfileComments } from '@/components/user'
 import type { Drone, Race } from '@/types'
 import { RACE_CATEGORIES } from '@/types'
 import type { PublicEventParticipation } from '@/services/publicService'
@@ -445,8 +446,11 @@ export function PublicProfile() {
             )}
           </div>
 
-          {/* Share Buttons */}
-          <div className="flex-shrink-0">
+          {/* Follow Button & Share */}
+          <div className="flex-shrink-0 flex flex-col gap-2">
+            {isAuthenticated && userId && (
+              <FollowButton targetUserId={userId} />
+            )}
             <ShareButtons url={currentUrl} userName={user.displayName} />
           </div>
         </div>
@@ -574,6 +578,13 @@ export function PublicProfile() {
           </section>
         )}
       </ContentGate>
+
+      {/* Profile Comments */}
+      {isAuthenticated && userId && (
+        <section className="mt-8">
+          <ProfileComments profileUserId={userId} />
+        </section>
+      )}
     </div>
   )
 }

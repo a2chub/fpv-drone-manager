@@ -1,3 +1,5 @@
 export { UserCard } from './UserCard'
 export { UserSearchBar } from './UserSearchBar'
 export { UserList } from './UserList'
+export { FollowButton } from './FollowButton'
+export { ProfileComments } from './ProfileComments'

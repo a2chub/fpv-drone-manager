@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom'
 import { useAuth } from '@/contexts/AuthContext'
 import { useStats } from '@/hooks/useStats'
 import { Calendar } from '@/components/calendar'
+import { ActivityFeed, UpcomingEvents } from '@/components/home'
 
 export function Dashboard() {
   const { user } = useAuth()
@@ -152,6 +153,21 @@ export function Dashboard() {
           活動カレンダー
         </h2>
         <Calendar />
+      </section>
+
+      {/* Activity Feed & Upcoming Events */}
+      <section className="mt-8">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Activity Feed - 2/3 */}
+          <div className="lg:col-span-2">
+            <ActivityFeed />
+          </div>
+
+          {/* Upcoming Events - 1/3 */}
+          <div>
+            <UpcomingEvents />
+          </div>
+        </div>
       </section>
 
       {/* Recent Drones */}
