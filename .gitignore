@@ -181,3 +181,6 @@ generated/
 # Package manager locks (choose one and uncomment others if needed)
 # yarn.lock
 # pnpm-lock.yaml
+
+# Auto Claude data directory
+.auto-claude/

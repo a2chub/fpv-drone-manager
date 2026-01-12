@@ -1,6 +1,17 @@
-import { doc, getDoc } from 'firebase/firestore'
+import { doc, getDoc, query, getDocs, collectionGroup } from 'firebase/firestore'
 import { getDocuments, where, orderBy, db } from '@/lib/firebase'
-import type { User, Drone, Race } from '@/types'
+import type { User, Drone, Race, RaceEvent, EventParticipant } from '@/types'
+
+// 公開イベント参加履歴の型
+export interface PublicEventParticipation {
+  eventId: string
+  eventTitle: string
+  eventDate: RaceEvent['date']
+  eventLocation: string
+  eventCoverImage: string | null
+  participantStatus: EventParticipant['status']
+  joinedAt: EventParticipant['createdAt']
+}
 
 export const publicService = {
   /**
@@ -71,5 +82,75 @@ export const publicService = {
     }
 
     return null
+  },
+
+  /**
+   * ユーザーのプロフィールが公開されているかチェック
+   */
+  async isProfilePublic(userId: string): Promise<boolean> {
+    const user = await this.getPublicUser(userId)
+    if (!user) return false
+    return user.settings?.isProfilePublic ?? true
+  },
+
+  /**
+   * ユーザーがイベント履歴を公開しているかチェック
+   */
+  async isEventHistoryPublic(userId: string): Promise<boolean> {
+    const user = await this.getPublicUser(userId)
+    if (!user) return false
+    // プロフィールが非公開なら履歴も非公開
+    if (!(user.settings?.isProfilePublic ?? true)) return false
+    return user.settings?.showEventHistory ?? false
+  },
+
+  /**
+   * 公開イベント参加履歴を取得（isPublic: true のみ）
+   */
+  async getPublicEventHistory(userId: string): Promise<PublicEventParticipation[]> {
+    // コレクショングループクエリで全イベントの参加者を検索
+    const participantsQuery = query(
+      collectionGroup(db, 'participants'),
+      where('userId', '==', userId),
+      where('status', '==', 'approved'),
+      where('isPublic', '==', true)
+    )
+
+    const participantsSnap = await getDocs(participantsQuery)
+    const results: PublicEventParticipation[] = []
+
+    for (const participantDoc of participantsSnap.docs) {
+      const participant = participantDoc.data() as EventParticipant
+      const eventId = participant.eventId
+
+      // イベント情報を取得
+      const eventRef = doc(db, 'raceEvents', eventId)
+      const eventSnap = await getDoc(eventRef)
+
+      if (eventSnap.exists()) {
+        const event = eventSnap.data() as RaceEvent
+        // 公開イベントのみ含める
+        if (event.visibility === 'public' && event.status !== 'draft') {
+          results.push({
+            eventId,
+            eventTitle: event.title,
+            eventDate: event.date,
+            eventLocation: event.location,
+            eventCoverImage: event.coverImageUrl,
+            participantStatus: participant.status,
+            joinedAt: participant.createdAt,
+          })
+        }
+      }
+    }
+
+    // 日付順にソート（新しい順）
+    results.sort((a, b) => {
+      const dateA = a.eventDate?.toMillis?.() || 0
+      const dateB = b.eventDate?.toMillis?.() || 0
+      return dateB - dateA
+    })
+
+    return results
   },
 }

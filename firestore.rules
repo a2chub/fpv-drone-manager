@@ -25,25 +25,27 @@ service cloud.firestore {
       allow read, write: if isOwner(userId);
       // Admin can read all
       allow read: if isAdmin();
+      // Public profiles can be read by anyone
+      allow read: if resource.data.settings.isProfilePublic == true;
 
       // Drones subcollection
       match /drones/{droneId} {
         allow read: if isOwner(userId) ||
-                       (isAuthenticated() && isPublicData()) ||
+                       isPublicData() ||
                        isAdmin();
         allow write: if isOwner(userId);
 
         // Parts subcollection
         match /parts/{partId} {
           allow read: if isOwner(userId) ||
-                         (isAuthenticated() && isPublicData()) ||
+                         isPublicData() ||
                          isAdmin();
           allow write: if isOwner(userId);
 
           // Part histories subcollection
           match /histories/{historyId} {
             allow read: if isOwner(userId) ||
-                           (isAuthenticated() && isPublicData()) ||
+                           isPublicData() ||
                            isAdmin();
             allow write: if isOwner(userId);
           }
@@ -59,7 +61,7 @@ service cloud.firestore {
       // Races subcollection
       match /races/{raceId} {
         allow read: if isOwner(userId) ||
-                       (isAuthenticated() && isPublicData()) ||
+                       isPublicData() ||
                        isAdmin();
         allow write: if isOwner(userId);
       }
@@ -112,6 +114,9 @@ service cloud.firestore {
 
         // Read: organizer can see all, participant can see their own
         allow read: if isEventOrganizer() || isParticipantOwner();
+        // Public participants can be read by authenticated users
+        allow read: if isAuthenticated() &&
+                       resource.data.isPublic == true;
         // Create: authenticated users can register themselves
         allow create: if isParticipantOwnerOnCreate();
         // Update: organizer (approve/reject) or participant owner (cancel, link race)

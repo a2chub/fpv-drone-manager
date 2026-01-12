@@ -1,10 +1,12 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { eventService } from '@/services/eventService'
+import { participantService } from '@/services/participantService'
 import { useAuth } from '@/contexts/AuthContext'
 import { trackEvent, AnalyticsEvents } from '@/lib/analytics'
 import type { RaceEventFormData, EventStatus } from '@/types/event'
 
 const EVENTS_QUERY_KEY = 'events'
+const USER_PARTICIPATIONS_QUERY_KEY = 'userParticipations'
 
 /**
  * 全公開イベント一覧を取得
@@ -109,6 +111,42 @@ export function useUpdateEventStatus() {
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: [EVENTS_QUERY_KEY] })
       queryClient.invalidateQueries({ queryKey: [EVENTS_QUERY_KEY, variables.eventId] })
+    },
+  })
+}
+
+/**
+ * ユーザーの参加イベント履歴を取得
+ */
+export function useUserParticipations() {
+  const { user } = useAuth()
+
+  return useQuery({
+    queryKey: [USER_PARTICIPATIONS_QUERY_KEY, user?.id],
+    queryFn: () => participantService.getUserParticipations(user!.id),
+    enabled: !!user,
+  })
+}
+
+/**
+ * 参加イベントの公開設定を更新
+ */
+export function useUpdateParticipationVisibility() {
+  const queryClient = useQueryClient()
+  const { user } = useAuth()
+
+  return useMutation({
+    mutationFn: ({
+      eventId,
+      participantId,
+      isPublic,
+    }: {
+      eventId: string
+      participantId: string
+      isPublic: boolean
+    }) => participantService.updateVisibility(eventId, participantId, isPublic),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [USER_PARTICIPATIONS_QUERY_KEY, user?.id] })
     },
   })
 }

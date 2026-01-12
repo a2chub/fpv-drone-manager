@@ -9,6 +9,7 @@ import type { User as FirebaseUser } from 'firebase/auth'
 import {
   signInWithGoogle as firebaseSignInWithGoogle,
   signInWithEmailAndPassword as firebaseSignInWithEmailAndPassword,
+  signUpWithEmailAndPassword as firebaseSignUpWithEmailAndPassword,
   signOut as firebaseSignOut,
   onAuthStateChanged,
   getUserDocument,
@@ -27,6 +28,7 @@ interface AuthState {
 interface AuthContextValue extends AuthState {
   signInWithGoogle: () => Promise<void>
   signInWithEmail: (email: string, password: string) => Promise<void>
+  signUpWithEmail: (email: string, password: string) => Promise<void>
   signOut: () => Promise<void>
   isAdmin: boolean
   isAuthenticated: boolean
@@ -146,6 +148,36 @@ export function AuthProvider({ children }: AuthProviderProps) {
     }
   }
 
+  const signUpWithEmail = async (email: string, password: string) => {
+    setState((prev) => ({ ...prev, loading: true, error: null }))
+    try {
+      const firebaseUser = await firebaseSignUpWithEmailAndPassword(email, password)
+      const user = await getUserDocument(firebaseUser.uid)
+      setState({
+        user,
+        firebaseUser,
+        loading: false,
+        error: null,
+      })
+
+      // GA4: 新規登録イベントとユーザープロパティを設定
+      if (user) {
+        trackEvent(AnalyticsEvents.SIGNUP, { method: 'email' })
+        setUserId(user.id)
+        setUserProperties({
+          user_role: user.role,
+        })
+      }
+    } catch (error) {
+      setState((prev) => ({
+        ...prev,
+        loading: false,
+        error: error instanceof Error ? error : new Error('Sign up failed'),
+      }))
+      throw error
+    }
+  }
+
   const signOut = async () => {
     try {
       // GA4: ログアウトイベントを送信
@@ -174,6 +206,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     ...state,
     signInWithGoogle,
     signInWithEmail,
+    signUpWithEmail,
     signOut,
     isAdmin: state.user?.role === 'admin',
     isAuthenticated: !!state.user,

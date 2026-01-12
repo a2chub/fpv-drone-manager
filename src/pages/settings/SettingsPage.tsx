@@ -1,20 +1,28 @@
 import { useState, useEffect } from 'react'
+import { Link } from 'react-router-dom'
 import { useAuth } from '@/contexts/AuthContext'
 import { useTheme } from '@/contexts/ThemeContext'
-import { updateUserProfile } from '@/lib/firebase/auth'
+import { updateUserProfile, updateUserSettings } from '@/lib/firebase/auth'
 import { useImageUpload } from '@/hooks/useImageUpload'
+import { useUserParticipations, useUpdateParticipationVisibility } from '@/hooks/useEvents'
 import type { ThemeMode } from '@/types'
 
 export function SettingsPage() {
   const { user } = useAuth()
   const { themeMode, setThemeMode } = useTheme()
+  const { data: participations, isLoading: participationsLoading } = useUserParticipations()
+  const updateVisibility = useUpdateParticipationVisibility()
 
   const [displayName, setDisplayName] = useState(user?.displayName || '')
   const [bio, setBio] = useState(user?.profile?.bio || '')
   const [location, setLocation] = useState(user?.profile?.location || '')
   const [photoURL, setPhotoURL] = useState(user?.photoURL || '')
+  const [isProfilePublic, setIsProfilePublic] = useState(user?.settings?.isProfilePublic ?? true)
+  const [showEventHistory, setShowEventHistory] = useState(user?.settings?.showEventHistory ?? false)
   const [isSaving, setIsSaving] = useState(false)
+  const [isSavingPrivacy, setIsSavingPrivacy] = useState(false)
   const [saveSuccess, setSaveSuccess] = useState(false)
+  const [privacySaveSuccess, setPrivacySaveSuccess] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
   const { uploadMultiple, isUploading } = useImageUpload({
@@ -28,6 +36,8 @@ export function SettingsPage() {
       setBio(user.profile?.bio || '')
       setLocation(user.profile?.location || '')
       setPhotoURL(user.photoURL || '')
+      setIsProfilePublic(user.settings?.isProfilePublic ?? true)
+      setShowEventHistory(user.settings?.showEventHistory ?? false)
     }
   }, [user])
 
@@ -74,6 +84,29 @@ export function SettingsPage() {
 
   const handleThemeChange = async (mode: ThemeMode) => {
     await setThemeMode(mode)
+  }
+
+  const handlePrivacySave = async () => {
+    if (!user) return
+
+    setIsSavingPrivacy(true)
+    setError(null)
+    setPrivacySaveSuccess(false)
+
+    try {
+      await updateUserSettings(user.id, {
+        ...user.settings,
+        isProfilePublic,
+        showEventHistory,
+      })
+
+      setPrivacySaveSuccess(true)
+      setTimeout(() => setPrivacySaveSuccess(false), 3000)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'プライバシー設定の保存に失敗しました')
+    } finally {
+      setIsSavingPrivacy(false)
+    }
   }
 
   if (!user) {
@@ -250,6 +283,157 @@ export function SettingsPage() {
           ))}
         </div>
       </section>
+
+      {/* Privacy section */}
+      <section className="card p-6 mb-6">
+        <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+          プライバシー設定
+        </h2>
+
+        {privacySaveSuccess && (
+          <div className="mb-4 p-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
+            <p className="text-sm text-green-700 dark:text-green-300">プライバシー設定を保存しました</p>
+          </div>
+        )}
+
+        <div className="space-y-4">
+          {/* Profile public setting */}
+          <label className="flex items-start gap-3 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={isProfilePublic}
+              onChange={(e) => setIsProfilePublic(e.target.checked)}
+              className="mt-1 w-5 h-5 text-primary-600 bg-gray-100 border-gray-300 rounded focus:ring-primary-500 dark:focus:ring-primary-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
+            />
+            <div>
+              <span className="text-gray-900 dark:text-white font-medium">
+                プロフィールを公開する
+              </span>
+              <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                オフにすると、他のユーザーはあなたのプロフィール詳細（自己紹介、機体、レース記録など）を見ることができません。名前とアバター画像のみ表示されます。
+              </p>
+            </div>
+          </label>
+
+          {/* Event history public setting */}
+          <label className={`flex items-start gap-3 ${isProfilePublic ? 'cursor-pointer' : 'cursor-not-allowed opacity-50'}`}>
+            <input
+              type="checkbox"
+              checked={showEventHistory}
+              onChange={(e) => setShowEventHistory(e.target.checked)}
+              disabled={!isProfilePublic}
+              className="mt-1 w-5 h-5 text-primary-600 bg-gray-100 border-gray-300 rounded focus:ring-primary-500 dark:focus:ring-primary-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600 disabled:opacity-50"
+            />
+            <div>
+              <span className="text-gray-900 dark:text-white font-medium">
+                参加イベント履歴を公開する
+              </span>
+              <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                オンにすると、過去に参加したイベントがプロフィールに表示されます。各イベントの公開/非公開は個別に設定できます。
+              </p>
+            </div>
+          </label>
+        </div>
+
+        <button
+          onClick={handlePrivacySave}
+          disabled={isSavingPrivacy}
+          className="btn-primary mt-6"
+        >
+          {isSavingPrivacy ? '保存中...' : 'プライバシー設定を保存'}
+        </button>
+      </section>
+
+      {/* Event history visibility section */}
+      {showEventHistory && (
+        <section className="card p-6 mb-6">
+          <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+            参加イベント履歴の公開設定
+          </h2>
+          <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
+            各イベントの参加履歴を公開プロフィールに表示するかどうかを設定できます。
+          </p>
+
+          {participationsLoading ? (
+            <div className="flex items-center justify-center py-8">
+              <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary-500"></div>
+            </div>
+          ) : participations && participations.length > 0 ? (
+            <div className="space-y-3">
+              {participations.map(({ participant, event }) => (
+                <div
+                  key={participant.id}
+                  className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg"
+                >
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className="w-12 h-12 bg-gray-200 dark:bg-gray-700 rounded-lg flex-shrink-0 overflow-hidden">
+                      {event.coverImageUrl ? (
+                        <img
+                          src={event.coverImageUrl}
+                          alt={event.title}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center text-gray-400">
+                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+                            />
+                          </svg>
+                        </div>
+                      )}
+                    </div>
+                    <div className="min-w-0">
+                      <Link
+                        to={`/events/${event.id}`}
+                        className="font-medium text-gray-900 dark:text-white truncate block hover:text-primary-500"
+                      >
+                        {event.title}
+                      </Link>
+                      <p className="text-sm text-gray-500 dark:text-gray-400 truncate">
+                        {event.date?.toDate?.().toLocaleDateString('ja-JP')} - {event.location}
+                      </p>
+                    </div>
+                  </div>
+                  <label className="flex items-center gap-2 cursor-pointer flex-shrink-0 ml-4">
+                    <input
+                      type="checkbox"
+                      checked={participant.isPublic ?? false}
+                      onChange={(e) => {
+                        updateVisibility.mutate({
+                          eventId: event.id,
+                          participantId: participant.id,
+                          isPublic: e.target.checked,
+                        })
+                      }}
+                      disabled={updateVisibility.isPending}
+                      className="w-5 h-5 text-primary-600 bg-gray-100 border-gray-300 rounded focus:ring-primary-500"
+                    />
+                    <span className="text-sm text-gray-600 dark:text-gray-300">
+                      {participant.isPublic ? '公開' : '非公開'}
+                    </span>
+                  </label>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-8 text-gray-500 dark:text-gray-400">
+              <svg className="w-12 h-12 mx-auto mb-3 text-gray-300 dark:text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+                />
+              </svg>
+              <p>参加したイベントはまだありません</p>
+            </div>
+          )}
+        </section>
+      )}
 
       {/* Account section */}
       <section className="card p-6">

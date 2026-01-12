@@ -18,6 +18,8 @@ export interface UserSettings {
   defaultVisibility: 'private' | 'public'
   emailNotifications: boolean
   themeMode: ThemeMode
+  isProfilePublic: boolean // プロフィール全体の公開設定
+  showEventHistory: boolean // 参加イベント履歴の公開設定
 }
 
 export interface User {

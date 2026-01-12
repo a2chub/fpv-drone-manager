@@ -71,6 +71,7 @@ export interface EventParticipant {
   message: string | null
   approvedAt: Timestamp | null
   linkedRaceId: string | null
+  isPublic: boolean // この参加履歴を公開プロフィールに表示するか
   createdAt: Timestamp
   updatedAt: Timestamp
 }

@@ -1,7 +1,15 @@
 import { useParams, Link } from 'react-router-dom'
 import { usePublicEvent, usePublicEventParticipants, usePublicEventPosts } from '@/hooks/usePublicEvents'
 import { PostCard, AlbumGallery } from '@/components/event'
+import { useAuth } from '@/contexts/AuthContext'
+import { ContentGate } from '@/components/common'
 import { EVENT_CATEGORIES } from '@/types'
+
+// 名前を部分的に隠すヘルパー関数
+function maskName(name: string): string {
+  if (name.length <= 3) return name[0] + '***'
+  return name.slice(0, 3) + '***'
+}
 
 function formatDate(timestamp: { toDate: () => Date }): string {
   const date = timestamp.toDate()
@@ -17,6 +25,7 @@ function formatDate(timestamp: { toDate: () => Date }): string {
 
 export function PublicEvent() {
   const { eventId } = useParams<{ eventId: string }>()
+  const { isAuthenticated } = useAuth()
 
   const { data: event, isLoading: eventLoading } = usePublicEvent(eventId)
   const { data: participants } = usePublicEventParticipants(eventId)
@@ -55,7 +64,7 @@ export function PublicEvent() {
 
   return (
     <div className="max-w-4xl mx-auto px-4 py-8">
-      {/* Event Header */}
+      {/* Event Header - 基本情報は常に表示 */}
       <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm overflow-hidden mb-6">
         {/* Cover Image */}
         {event.coverImageUrl && (
@@ -104,19 +113,27 @@ export function PublicEvent() {
             </div>
           </div>
 
-          {/* Organizer */}
+          {/* Organizer - 非認証時はぼかし */}
           <div className="flex items-center gap-3 pt-4 border-t border-gray-200 dark:border-gray-700">
-            <div className="w-10 h-10 rounded-full bg-gray-200 dark:bg-gray-700 overflow-hidden">
+            <div className="relative w-10 h-10 rounded-full bg-gray-200 dark:bg-gray-700 overflow-hidden">
               {event.organizerPhotoURL ? (
                 <img
                   src={event.organizerPhotoURL}
-                  alt={event.organizerName}
-                  className="w-full h-full object-cover"
+                  alt={isAuthenticated ? event.organizerName : '主催者'}
+                  className={`w-full h-full object-cover ${!isAuthenticated ? 'blur-md' : ''}`}
                 />
               ) : (
-                <div className="w-full h-full flex items-center justify-center text-gray-400">
+                <div className={`w-full h-full flex items-center justify-center text-gray-400 ${!isAuthenticated ? 'blur-sm' : ''}`}>
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                  </svg>
+                </div>
+              )}
+              {/* 非認証時のオーバーレイ */}
+              {!isAuthenticated && (
+                <div className="absolute inset-0 bg-gray-200/50 dark:bg-gray-600/50 rounded-full flex items-center justify-center">
+                  <svg className="w-4 h-4 text-gray-500 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
                   </svg>
                 </div>
               )}
@@ -124,17 +141,10 @@ export function PublicEvent() {
             <div>
               <p className="text-sm text-gray-500 dark:text-gray-400">主催者</p>
               <p className="font-medium text-gray-900 dark:text-white">
-                {event.organizerName}
+                {isAuthenticated ? event.organizerName : maskName(event.organizerName)}
               </p>
             </div>
           </div>
-
-          {/* Description */}
-          {event.description && (
-            <p className="text-gray-700 dark:text-gray-300 whitespace-pre-wrap mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
-              {event.description}
-            </p>
-          )}
 
           {/* Share */}
           <div className="flex items-center gap-3 mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
@@ -155,68 +165,92 @@ export function PublicEvent() {
         </div>
       </div>
 
-      {/* Participants Preview */}
-      {participants && participants.length > 0 && (
-        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6 mb-6">
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-            参加者 ({participants.length})
-          </h2>
-          <div className="flex flex-wrap gap-2">
-            {participants.slice(0, 10).map((participant) => (
-              <div
-                key={participant.id}
-                className="flex items-center gap-2 px-3 py-1.5 bg-gray-100 dark:bg-gray-700 rounded-full"
-              >
-                <div className="w-6 h-6 rounded-full bg-gray-200 dark:bg-gray-600 overflow-hidden">
-                  {participant.photoURL ? (
-                    <img
-                      src={participant.photoURL}
-                      alt={participant.displayName}
-                      className="w-full h-full object-cover"
-                    />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center text-gray-400 text-xs">
-                      {participant.displayName[0]}
-                    </div>
-                  )}
+      {/* コンテンツ部分をContentGateでラップ */}
+      <ContentGate
+        previewHeight={400}
+        title="ログインしてイベント詳細を見る"
+        description="アカウントを作成して、参加者情報やイベントの写真・動画をチェックしましょう。"
+        benefits={[
+          '参加者一覧を見る',
+          '写真・動画アルバムを見る',
+          'イベントに参加申し込み',
+        ]}
+      >
+        {/* Description */}
+        {event.description && (
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6 mb-6">
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-3">
+              イベント詳細
+            </h2>
+            <p className="text-gray-700 dark:text-gray-300 whitespace-pre-wrap">
+              {event.description}
+            </p>
+          </div>
+        )}
+
+        {/* Participants Preview */}
+        {participants && participants.length > 0 && (
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6 mb-6">
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+              参加者 ({participants.length})
+            </h2>
+            <div className="flex flex-wrap gap-2">
+              {participants.slice(0, 10).map((participant) => (
+                <div
+                  key={participant.id}
+                  className="flex items-center gap-2 px-3 py-1.5 bg-gray-100 dark:bg-gray-700 rounded-full"
+                >
+                  <div className="w-6 h-6 rounded-full bg-gray-200 dark:bg-gray-600 overflow-hidden">
+                    {participant.photoURL ? (
+                      <img
+                        src={participant.photoURL}
+                        alt={participant.displayName}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center text-gray-400 text-xs">
+                        {participant.displayName[0]}
+                      </div>
+                    )}
+                  </div>
+                  <span className="text-sm text-gray-700 dark:text-gray-300">
+                    {participant.displayName}
+                  </span>
                 </div>
-                <span className="text-sm text-gray-700 dark:text-gray-300">
-                  {participant.displayName}
+              ))}
+              {participants.length > 10 && (
+                <span className="px-3 py-1.5 text-sm text-gray-500 dark:text-gray-400">
+                  +{participants.length - 10}人
                 </span>
-              </div>
-            ))}
-            {participants.length > 10 && (
-              <span className="px-3 py-1.5 text-sm text-gray-500 dark:text-gray-400">
-                +{participants.length - 10}人
-              </span>
-            )}
+              )}
+            </div>
           </div>
-        </div>
-      )}
+        )}
 
-      {/* Album Preview */}
-      {posts && posts.some((p) => (p.media?.length || p.images?.length || 0) > 0) && (
-        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6 mb-6">
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-            アルバム
-          </h2>
-          <AlbumGallery posts={posts} />
-        </div>
-      )}
-
-      {/* Posts */}
-      {posts && posts.length > 0 && (
-        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6">
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-            投稿 ({posts.length})
-          </h2>
-          <div className="space-y-4">
-            {posts.map((post) => (
-              <PostCard key={post.id} post={post} />
-            ))}
+        {/* Album Preview */}
+        {posts && posts.some((p) => (p.media?.length || p.images?.length || 0) > 0) && (
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6 mb-6">
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+              アルバム
+            </h2>
+            <AlbumGallery posts={posts} />
           </div>
-        </div>
-      )}
+        )}
+
+        {/* Posts */}
+        {posts && posts.length > 0 && (
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6">
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+              投稿 ({posts.length})
+            </h2>
+            <div className="space-y-4">
+              {posts.map((post) => (
+                <PostCard key={post.id} post={post} />
+              ))}
+            </div>
+          </div>
+        )}
+      </ContentGate>
     </div>
   )
 }

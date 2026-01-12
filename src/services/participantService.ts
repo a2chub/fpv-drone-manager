@@ -5,13 +5,21 @@ import {
   deleteDocument,
   orderBy,
   where,
+  db,
 } from '@/lib/firebase'
-import { serverTimestamp } from 'firebase/firestore'
+import { serverTimestamp, collectionGroup, query, getDocs, doc, getDoc } from 'firebase/firestore'
 import type {
   EventParticipant,
   ParticipantFormData,
   RegistrationType,
+  RaceEvent,
 } from '@/types/event'
+
+// 参加イベント詳細情報の型
+export interface UserEventParticipation {
+  participant: EventParticipant
+  event: RaceEvent
+}
 
 const getParticipantsPath = (eventId: string) =>
   `raceEvents/${eventId}/participants`
@@ -86,6 +94,7 @@ export const participantService = {
       message: data.message || null,
       approvedAt,
       linkedRaceId: null,
+      isPublic: false, // デフォルトは非公開
     })
     return docRef.id
   },
@@ -136,5 +145,56 @@ export const participantService = {
    */
   async delete(eventId: string, participantId: string): Promise<void> {
     await deleteDocument(getParticipantsPath(eventId), participantId)
+  },
+
+  /**
+   * 公開設定を更新
+   */
+  async updateVisibility(
+    eventId: string,
+    participantId: string,
+    isPublic: boolean
+  ): Promise<void> {
+    await updateDocument(getParticipantsPath(eventId), participantId, {
+      isPublic,
+    })
+  },
+
+  /**
+   * ユーザーの全参加履歴を取得（イベント情報含む）
+   */
+  async getUserParticipations(userId: string): Promise<UserEventParticipation[]> {
+    // コレクショングループクエリで全イベントの参加者を検索
+    const participantsQuery = query(
+      collectionGroup(db, 'participants'),
+      where('userId', '==', userId),
+      where('status', '==', 'approved')
+    )
+
+    const participantsSnap = await getDocs(participantsQuery)
+    const results: UserEventParticipation[] = []
+
+    for (const participantDoc of participantsSnap.docs) {
+      const participant = { id: participantDoc.id, ...participantDoc.data() } as EventParticipant
+      const eventId = participant.eventId
+
+      // イベント情報を取得
+      const eventRef = doc(db, 'raceEvents', eventId)
+      const eventSnap = await getDoc(eventRef)
+
+      if (eventSnap.exists()) {
+        const event = { id: eventSnap.id, ...eventSnap.data() } as RaceEvent
+        results.push({ participant, event })
+      }
+    }
+
+    // 日付順にソート（新しい順）
+    results.sort((a, b) => {
+      const dateA = a.event.date?.toMillis?.() || 0
+      const dateB = b.event.date?.toMillis?.() || 0
+      return dateB - dateA
+    })
+
+    return results
   },
 }

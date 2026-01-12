@@ -1,6 +1,7 @@
 export { ImageUploader } from './ImageUploader'
 export { FilterBar } from './FilterBar'
 export { BlurredContent } from './BlurredContent'
+export { ContentGate } from './ContentGate'
 export { AnimatedBackground } from './AnimatedBackground'
 export { GlassCard } from './GlassCard'
 export { GradientText } from './GradientText'

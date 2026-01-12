@@ -4,6 +4,7 @@ import { AnimatedBackground } from '@/components/common/AnimatedBackground'
 import { BackgroundPaths } from '@/components/ui/background-paths'
 import { GlassCard } from '@/components/common/GlassCard'
 import { GradientText } from '@/components/common/GradientText'
+import { PublicContentSection } from '@/components/home'
 
 export function Home() {
   const { isAuthenticated } = useAuth()
@@ -69,8 +70,13 @@ export function Home() {
             )}
           </div>
 
+          {/* コミュニティプレビュー */}
+          <div className="mt-12">
+            <PublicContentSection compact />
+          </div>
+
           {/* スクロールインジケーター */}
-          <div className="mt-16 animate-bounce">
+          <div className="mt-8 animate-bounce">
             <svg
               className="w-6 h-6 mx-auto text-gray-400"
               fill="none"

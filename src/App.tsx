@@ -11,6 +11,7 @@ import { DroneFormPage } from './pages/drones/DroneFormPage'
 import { RaceListPage, RaceDetailPage, RaceFormPage } from './pages/races'
 import { PartDetailPage } from './pages/parts'
 import { EventListPage, EventDetailPage, EventFormPage, EventAlbumPage } from './pages/events'
+import { UserListPage } from './pages/users'
 import { SettingsPage } from './pages/settings'
 import { AdminLogin, AdminDashboard } from './pages/admin'
 import { PublicProfile } from './pages/PublicProfile'
@@ -43,6 +44,9 @@ function App() {
 
         {/* Public event route */}
         <Route path="/e/:eventId" element={<PublicEvent />} />
+
+        {/* Public user list */}
+        <Route path="/users" element={<UserListPage />} />
 
         {/* Protected routes */}
         <Route element={<AuthGuard />}>

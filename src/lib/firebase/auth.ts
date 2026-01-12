@@ -2,6 +2,7 @@ import {
   GoogleAuthProvider,
   signInWithPopup,
   signInWithEmailAndPassword as firebaseSignInWithEmailAndPassword,
+  createUserWithEmailAndPassword as firebaseCreateUserWithEmailAndPassword,
   signOut as firebaseSignOut,
   onAuthStateChanged as firebaseOnAuthStateChanged,
   type User as FirebaseUser,
@@ -23,6 +24,16 @@ export const signInWithEmailAndPassword = async (
   password: string
 ): Promise<FirebaseUser> => {
   const result = await firebaseSignInWithEmailAndPassword(auth, email, password)
+  await ensureUserDocument(result.user)
+  return result.user
+}
+
+export const signUpWithEmailAndPassword = async (
+  email: string,
+  password: string
+): Promise<FirebaseUser> => {
+  const result = await firebaseCreateUserWithEmailAndPassword(auth, email, password)
+  await ensureUserDocument(result.user)
   return result.user
 }
 
@@ -76,6 +87,9 @@ export const ensureUserDocument = async (
     settings: {
       defaultVisibility: 'private',
       emailNotifications: true,
+      themeMode: 'system',
+      isProfilePublic: true,
+      showEventHistory: false,
     },
     createdAt: serverTimestamp(),
     updatedAt: serverTimestamp(),

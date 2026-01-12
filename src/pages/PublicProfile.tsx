@@ -1,7 +1,16 @@
 import { useParams, Link } from 'react-router-dom'
-import { usePublicUser, usePublicDrones, usePublicRaces } from '@/hooks/usePublicData'
+import { usePublicUser, usePublicDrones, usePublicRaces, usePublicEventHistory } from '@/hooks/usePublicData'
+import { useAuth } from '@/contexts/AuthContext'
+import { ContentGate } from '@/components/common'
 import type { Drone, Race } from '@/types'
 import { RACE_CATEGORIES } from '@/types'
+import type { PublicEventParticipation } from '@/services/publicService'
+
+// 名前を部分的に隠すヘルパー関数
+function maskName(name: string): string {
+  if (name.length <= 3) return name[0] + '***'
+  return name.slice(0, 3) + '***'
+}
 
 const CATEGORY_LABELS: Record<string, string> = {
   racing: 'レーシング',
@@ -130,6 +139,48 @@ function PublicRaceCard({ race, userId }: PublicRaceCardProps) {
   )
 }
 
+interface PublicEventCardProps {
+  event: PublicEventParticipation
+}
+
+function PublicEventCard({ event }: PublicEventCardProps) {
+  return (
+    <Link to={`/e/${event.eventId}`} className="block">
+      <div className="card p-4 hover:shadow-lg transition-shadow dark:bg-gray-800">
+        <div className="flex items-start gap-4">
+          <div className="w-16 h-16 bg-gray-100 dark:bg-gray-700 rounded-lg flex-shrink-0 overflow-hidden">
+            {event.eventCoverImage ? (
+              <img
+                src={event.eventCoverImage}
+                alt={event.eventTitle}
+                className="w-full h-full object-cover"
+              />
+            ) : (
+              <div className="w-full h-full flex items-center justify-center text-gray-400 dark:text-gray-500">
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+                  />
+                </svg>
+              </div>
+            )}
+          </div>
+          <div className="flex-1 min-w-0">
+            <h4 className="font-medium text-gray-900 dark:text-white truncate">
+              {event.eventTitle}
+            </h4>
+            <p className="text-sm text-gray-500 dark:text-gray-400">{formatDate(event.eventDate)}</p>
+            <p className="text-sm text-gray-500 dark:text-gray-400 truncate">{event.eventLocation}</p>
+          </div>
+        </div>
+      </div>
+    </Link>
+  )
+}
+
 function ShareButtons({ url, userName }: { url: string; userName: string }) {
   const twitterUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(
     `${userName}さんのドローンプロフィールをチェック！`
@@ -177,11 +228,21 @@ function ShareButtons({ url, userName }: { url: string; userName: string }) {
 
 export function PublicProfile() {
   const { userId } = useParams<{ userId: string }>()
+  const { isAuthenticated } = useAuth()
   const { data: user, isLoading: userLoading, error: userError } = usePublicUser(userId)
-  const { data: drones, isLoading: dronesLoading } = usePublicDrones(userId)
-  const { data: races, isLoading: racesLoading } = usePublicRaces(userId)
 
-  const isLoading = userLoading || dronesLoading || racesLoading
+  // プロフィールが公開されているか確認
+  const isProfilePublic = user?.settings?.isProfilePublic ?? true
+  const showEventHistory = user?.settings?.showEventHistory ?? false
+
+  // プロフィールが公開されている場合のみ詳細データを取得
+  const { data: drones, isLoading: dronesLoading } = usePublicDrones(isProfilePublic ? userId : undefined)
+  const { data: races, isLoading: racesLoading } = usePublicRaces(isProfilePublic ? userId : undefined)
+  const { data: events, isLoading: eventsLoading } = usePublicEventHistory(
+    isProfilePublic && showEventHistory ? userId : undefined
+  )
+
+  const isLoading = userLoading || (isProfilePublic && (dronesLoading || racesLoading || (showEventHistory && eventsLoading)))
 
   if (isLoading) {
     return (
@@ -215,6 +276,63 @@ export function PublicProfile() {
     )
   }
 
+  // プロフィール非公開の場合は基本情報のみ表示
+  if (!isProfilePublic) {
+    return (
+      <div>
+        {/* Profile Header - 基本情報のみ */}
+        <div className="card p-6 mb-8 dark:bg-gray-800">
+          <div className="flex flex-col items-center text-center">
+            {/* Avatar */}
+            <div className="w-24 h-24 rounded-full bg-gray-100 dark:bg-gray-700 overflow-hidden mb-4">
+              {user.photoURL ? (
+                <img
+                  src={user.photoURL}
+                  alt={user.displayName}
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <div className="w-full h-full flex items-center justify-center text-gray-400 dark:text-gray-500">
+                  <svg className="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+                    />
+                  </svg>
+                </div>
+              )}
+            </div>
+            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+              {user.displayName}
+            </h1>
+          </div>
+        </div>
+
+        {/* 非公開メッセージ */}
+        <div className="card p-8 text-center dark:bg-gray-800">
+          <svg
+            className="w-16 h-16 text-gray-300 dark:text-gray-600 mx-auto mb-4"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
+            />
+          </svg>
+          <p className="text-gray-500 dark:text-gray-400">
+            このユーザーはプロフィールを非公開にしています
+          </p>
+        </div>
+      </div>
+    )
+  }
+
   const currentUrl = window.location.href
 
   return (
@@ -223,15 +341,15 @@ export function PublicProfile() {
       <div className="card p-6 mb-8 dark:bg-gray-800">
         <div className="flex flex-col sm:flex-row items-center gap-6">
           {/* Avatar */}
-          <div className="w-24 h-24 rounded-full bg-gray-100 dark:bg-gray-700 overflow-hidden flex-shrink-0">
+          <div className="relative w-24 h-24 rounded-full bg-gray-100 dark:bg-gray-700 overflow-hidden flex-shrink-0">
             {user.photoURL ? (
               <img
                 src={user.photoURL}
-                alt={user.displayName}
-                className="w-full h-full object-cover"
+                alt={isAuthenticated ? user.displayName : 'パイロット'}
+                className={`w-full h-full object-cover ${!isAuthenticated ? 'blur-md' : ''}`}
               />
             ) : (
-              <div className="w-full h-full flex items-center justify-center text-gray-400 dark:text-gray-500">
+              <div className={`w-full h-full flex items-center justify-center text-gray-400 dark:text-gray-500 ${!isAuthenticated ? 'blur-sm' : ''}`}>
                 <svg className="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path
                     strokeLinecap="round"
@@ -242,15 +360,25 @@ export function PublicProfile() {
                 </svg>
               </div>
             )}
+            {/* 非認証時のオーバーレイ */}
+            {!isAuthenticated && (
+              <div className="absolute inset-0 bg-gray-200/50 dark:bg-gray-600/50 rounded-full flex items-center justify-center">
+                <svg className="w-6 h-6 text-gray-500 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                </svg>
+              </div>
+            )}
           </div>
 
           {/* User Info */}
           <div className="flex-1 text-center sm:text-left">
             <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-              {user.displayName}
+              {isAuthenticated ? user.displayName : maskName(user.displayName)}
             </h1>
             {user.profile.bio && (
-              <p className="text-gray-600 dark:text-gray-400 mt-2">{user.profile.bio}</p>
+              <p className="text-gray-600 dark:text-gray-400 mt-2">
+                {isAuthenticated ? user.profile.bio : user.profile.bio.slice(0, 30) + '...'}
+              </p>
             )}
             {user.profile.location && (
               <p className="text-sm text-gray-500 dark:text-gray-400 mt-1 flex items-center justify-center sm:justify-start gap-1">
@@ -272,8 +400,8 @@ export function PublicProfile() {
               </p>
             )}
 
-            {/* Social Links */}
-            {(user.profile.socialLinks.twitter ||
+            {/* Social Links - 認証済みのみ表示 */}
+            {isAuthenticated && (user.profile.socialLinks.twitter ||
               user.profile.socialLinks.instagram ||
               user.profile.socialLinks.youtube) && (
               <div className="flex items-center justify-center sm:justify-start gap-3 mt-3">
@@ -340,67 +468,112 @@ export function PublicProfile() {
         </div>
       </div>
 
-      {/* Public Drones */}
-      <section className="mb-8">
-        <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4">
-          公開機体
-        </h2>
-        {drones && drones.length > 0 ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {drones.map((drone) => (
-              <PublicDroneCard key={drone.id} drone={drone} userId={userId!} />
-            ))}
-          </div>
-        ) : (
-          <div className="card p-8 text-center dark:bg-gray-800">
-            <svg
-              className="w-12 h-12 text-gray-300 dark:text-gray-600 mx-auto mb-4"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"
-              />
-            </svg>
-            <p className="text-gray-500 dark:text-gray-400">公開されている機体はありません</p>
-          </div>
-        )}
-      </section>
+      {/* コンテンツ部分 - ContentGateでラップ */}
+      <ContentGate
+        previewHeight={400}
+        title="ログインしてプロフィールを見る"
+        description="このパイロットの詳細情報や機体のスペックをチェックしましょう。"
+        benefits={[
+          '機体の詳細スペックを閲覧',
+          'レース結果・実績を確認',
+          '他のパイロットと繋がる',
+        ]}
+      >
+        {/* Public Drones */}
+        <section className="mb-8">
+          <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4">
+            公開機体
+          </h2>
+          {drones && drones.length > 0 ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {drones.map((drone) => (
+                <PublicDroneCard key={drone.id} drone={drone} userId={userId!} />
+              ))}
+            </div>
+          ) : (
+            <div className="card p-8 text-center dark:bg-gray-800">
+              <svg
+                className="w-12 h-12 text-gray-300 dark:text-gray-600 mx-auto mb-4"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"
+                />
+              </svg>
+              <p className="text-gray-500 dark:text-gray-400">公開されている機体はありません</p>
+            </div>
+          )}
+        </section>
 
-      {/* Public Races */}
-      <section>
-        <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4">
-          公開レース
-        </h2>
-        {races && races.length > 0 ? (
-          <div className="space-y-3">
-            {races.map((race) => (
-              <PublicRaceCard key={race.id} race={race} userId={userId!} />
-            ))}
-          </div>
-        ) : (
-          <div className="card p-8 text-center dark:bg-gray-800">
-            <svg
-              className="w-12 h-12 text-gray-300 dark:text-gray-600 mx-auto mb-4"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M3 21v-4m0 0V5a2 2 0 012-2h6.5l1 1H21l-3 6 3 6h-8.5l-1-1H5a2 2 0 00-2 2zm9-13.5V9"
-              />
-            </svg>
-            <p className="text-gray-500 dark:text-gray-400">公開されているレースはありません</p>
-          </div>
+        {/* Public Races */}
+        <section className="mb-8">
+          <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4">
+            公開レース
+          </h2>
+          {races && races.length > 0 ? (
+            <div className="space-y-3">
+              {races.map((race) => (
+                <PublicRaceCard key={race.id} race={race} userId={userId!} />
+              ))}
+            </div>
+          ) : (
+            <div className="card p-8 text-center dark:bg-gray-800">
+              <svg
+                className="w-12 h-12 text-gray-300 dark:text-gray-600 mx-auto mb-4"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M3 21v-4m0 0V5a2 2 0 012-2h6.5l1 1H21l-3 6 3 6h-8.5l-1-1H5a2 2 0 00-2 2zm9-13.5V9"
+                />
+              </svg>
+              <p className="text-gray-500 dark:text-gray-400">公開されているレースはありません</p>
+            </div>
+          )}
+        </section>
+
+        {/* Public Event History */}
+        {showEventHistory && (
+          <section>
+            <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4">
+              参加イベント履歴
+            </h2>
+            {events && events.length > 0 ? (
+              <div className="space-y-3">
+                {events.map((event) => (
+                  <PublicEventCard key={event.eventId} event={event} />
+                ))}
+              </div>
+            ) : (
+              <div className="card p-8 text-center dark:bg-gray-800">
+                <svg
+                  className="w-12 h-12 text-gray-300 dark:text-gray-600 mx-auto mb-4"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+                  />
+                </svg>
+                <p className="text-gray-500 dark:text-gray-400">公開されている参加イベントはありません</p>
+              </div>
+            )}
+          </section>
         )}
-      </section>
+      </ContentGate>
     </div>
   )
 }
