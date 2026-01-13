@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useNavigate, useParams, Link } from 'react-router-dom'
 import { useAuth } from '@/contexts/AuthContext'
 import { useEvent, useUpdateEventStatus } from '@/hooks/useEvents'
-import { useParticipants, useMyParticipation, useJoinEvent, useApproveParticipant, useRejectParticipant, useCancelParticipation } from '@/hooks/useParticipants'
+import { useParticipants, useMyParticipation, useJoinEvent, useApproveParticipant, useRejectParticipant, useCancelParticipation, useRejoinEvent } from '@/hooks/useParticipants'
 import { useEventPosts, useCreateEventPost, useDeleteEventPost } from '@/hooks/useEventPosts'
 import { ParticipantList, JoinModal, PostCard, PostForm } from '@/components/event'
 import { EVENT_CATEGORIES, EVENT_STATUSES } from '@/types'
@@ -34,6 +34,7 @@ export function EventDetailPage() {
   const { data: posts } = useEventPosts(eventId)
 
   const joinEventMutation = useJoinEvent()
+  const rejoinEventMutation = useRejoinEvent()
   const approveParticipantMutation = useApproveParticipant()
   const rejectParticipantMutation = useRejectParticipant()
   const cancelParticipationMutation = useCancelParticipation()
@@ -68,7 +69,8 @@ export function EventDetailPage() {
   const isOrganizer = user?.id === event.organizerId
   const isParticipant = myParticipation?.status === 'approved'
   const isPending = myParticipation?.status === 'pending'
-  const canJoin = !myParticipation && event.status === 'published'
+  const isCancelledOrRejected = myParticipation?.status === 'cancelled' || myParticipation?.status === 'rejected'
+  const canJoin = (!myParticipation || isCancelledOrRejected) && event.status === 'published'
   const canPost = isOrganizer || isParticipant
 
   const categoryLabel = EVENT_CATEGORIES.find((c) => c.value === event.category)?.label || event.category
@@ -76,11 +78,22 @@ export function EventDetailPage() {
 
   const handleJoin = async (data: { message: string }) => {
     if (!eventId) return
-    await joinEventMutation.mutateAsync({
-      eventId,
-      data,
-      registrationType: event.registrationType,
-    })
+
+    // キャンセル済み or 拒否済みの場合は再参加
+    if (isCancelledOrRejected && myParticipation) {
+      await rejoinEventMutation.mutateAsync({
+        eventId,
+        participantId: myParticipation.id,
+        registrationType: event.registrationType,
+      })
+    } else {
+      // 新規参加
+      await joinEventMutation.mutateAsync({
+        eventId,
+        data,
+        registrationType: event.registrationType,
+      })
+    }
     setShowJoinModal(false)
   }
 
@@ -100,6 +113,7 @@ export function EventDetailPage() {
       await cancelParticipationMutation.mutateAsync({
         eventId,
         participantId: myParticipation.id,
+        currentStatus: myParticipation.status,
       })
     }
   }
@@ -242,7 +256,7 @@ export function EventDetailPage() {
                 承認待ち
               </span>
             )}
-            {isParticipant && (
+            {(isParticipant || isPending) && (
               <button
                 onClick={handleCancel}
                 className="px-4 py-2 bg-red-100 dark:bg-red-900/30 hover:bg-red-200 dark:hover:bg-red-900/50 text-red-700 dark:text-red-300 rounded-lg transition-colors"
@@ -266,7 +280,11 @@ export function EventDetailPage() {
           参加者 ({participants?.filter((p) => p.status === 'approved').length || 0})
         </h2>
         <ParticipantList
-          participants={participants || []}
+          participants={
+            isOrganizer
+              ? (participants || [])
+              : (participants || []).filter((p) => p.status === 'approved')
+          }
           isOrganizer={isOrganizer}
           onApprove={handleApprove}
           onReject={handleReject}

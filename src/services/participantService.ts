@@ -75,6 +75,7 @@ export const participantService = {
 
   /**
    * 参加登録
+   * 既存の参加ドキュメントがある場合は更新（rejoin）を行う
    */
   async create(
     eventId: string,
@@ -82,6 +83,16 @@ export const participantService = {
     data: ParticipantFormData,
     registrationType: RegistrationType
   ): Promise<string> {
+    // 既存の参加ドキュメントを確認
+    const existing = await this.getByUser(eventId, user.id)
+
+    if (existing) {
+      // 既存ドキュメントがある場合は更新（rejoin）
+      await this.rejoin(eventId, existing.id, registrationType)
+      return existing.id
+    }
+
+    // 新規作成
     const status = registrationType === 'open' ? 'approved' : 'pending'
     const approvedAt = registrationType === 'open' ? serverTimestamp() : null
 
@@ -124,6 +135,23 @@ export const participantService = {
   async cancel(eventId: string, participantId: string): Promise<void> {
     await updateDocument(getParticipantsPath(eventId), participantId, {
       status: 'cancelled',
+    })
+  },
+
+  /**
+   * 再参加（キャンセル・拒否後の復帰）
+   */
+  async rejoin(
+    eventId: string,
+    participantId: string,
+    registrationType: RegistrationType
+  ): Promise<void> {
+    const status = registrationType === 'open' ? 'approved' : 'pending'
+    const approvedAt = registrationType === 'open' ? serverTimestamp() : null
+
+    await updateDocument(getParticipantsPath(eventId), participantId, {
+      status,
+      approvedAt,
     })
   },
 

@@ -3,7 +3,7 @@ import { useAuth } from '@/contexts/AuthContext'
 import { participantService } from '@/services/participantService'
 import { eventService } from '@/services/eventService'
 import { trackEvent, AnalyticsEvents } from '@/lib/analytics'
-import type { ParticipantFormData, RegistrationType } from '@/types/event'
+import type { ParticipantFormData, RegistrationType, ParticipantStatus } from '@/types/event'
 
 const PARTICIPANTS_QUERY_KEY = 'participants'
 
@@ -61,8 +61,10 @@ export function useJoinEvent() {
         registrationType
       )
 
-      // 参加者数を更新
-      await eventService.incrementParticipantCount(eventId, 1)
+      // 自由参加の場合のみカウント+1（承認制はpendingなのでカウントしない）
+      if (registrationType === 'open') {
+        await eventService.incrementParticipantCount(eventId, 1)
+      }
 
       return participantId
     },
@@ -86,13 +88,17 @@ export function useApproveParticipant() {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: ({
+    mutationFn: async ({
       eventId,
       participantId,
     }: {
       eventId: string
       participantId: string
-    }) => participantService.approve(eventId, participantId),
+    }) => {
+      await participantService.approve(eventId, participantId)
+      // 承認時にカウント+1
+      await eventService.incrementParticipantCount(eventId, 1)
+    },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({
         queryKey: [PARTICIPANTS_QUERY_KEY, variables.eventId],
@@ -143,14 +149,18 @@ export function useCancelParticipation() {
     mutationFn: async ({
       eventId,
       participantId,
+      currentStatus,
     }: {
       eventId: string
       participantId: string
+      currentStatus: ParticipantStatus
     }) => {
       await participantService.cancel(eventId, participantId)
 
-      // 参加者数を更新
-      await eventService.incrementParticipantCount(eventId, -1)
+      // approvedからのキャンセルのみカウント-1（pendingからは変化なし）
+      if (currentStatus === 'approved') {
+        await eventService.incrementParticipantCount(eventId, -1)
+      }
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({
@@ -161,6 +171,45 @@ export function useCancelParticipation() {
       })
       // GA4: イベント参加キャンセルを追跡
       trackEvent(AnalyticsEvents.LEAVE_EVENT, { event_id: variables.eventId })
+    },
+  })
+}
+
+/**
+ * イベントに再参加（キャンセル・拒否後の復帰）
+ */
+export function useRejoinEvent() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async ({
+      eventId,
+      participantId,
+      registrationType,
+    }: {
+      eventId: string
+      participantId: string
+      registrationType: RegistrationType
+    }) => {
+      await participantService.rejoin(eventId, participantId, registrationType)
+
+      // 自由参加の場合のみカウント+1（承認制はpendingなのでカウントしない）
+      if (registrationType === 'open') {
+        await eventService.incrementParticipantCount(eventId, 1)
+      }
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({
+        queryKey: [PARTICIPANTS_QUERY_KEY, variables.eventId],
+      })
+      queryClient.invalidateQueries({
+        queryKey: [PARTICIPANTS_QUERY_KEY, variables.eventId, 'my'],
+      })
+      // GA4: イベント再参加を追跡
+      trackEvent(AnalyticsEvents.JOIN_EVENT, {
+        event_id: variables.eventId,
+        is_rejoin: true,
+      })
     },
   })
 }

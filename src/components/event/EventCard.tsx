@@ -44,7 +44,11 @@ export function EventCard({ event, onEdit, onDelete }: EventCardProps) {
       : `${event.participantCount}人参加`
 
   return (
-    <Link to={`/events/${event.id}`} className="card block overflow-hidden hover:shadow-md transition-shadow">
+    <Link
+      to={`/events/${event.id}`}
+      className="card block overflow-hidden hover:shadow-md transition-shadow"
+      data-testid={`event-card-${event.id}`}
+    >
       {/* Cover Image */}
       <div className="w-full h-40 bg-gray-100 dark:bg-gray-700 overflow-hidden">
         {event.coverImageUrl ? (
