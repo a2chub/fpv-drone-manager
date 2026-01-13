@@ -120,6 +120,11 @@ e2e/
 - [ローカル開発クイックスタート](docs/06_ローカル開発クイックスタート.md)
 - [実装ステータス](docs/07_実装ステータス.md)
 - [E2Eテストガイド](e2e/README.md)
+- [開発ガイドライン（CLAUDE.md）](CLAUDE.md) - Issue駆動開発ワークフロー
+
+## GitHub Issues
+
+未実装機能とバックログの管理: [Issues](https://github.com/a2chub/fpv-drone-manager/issues)
 
 ## 環境変数
 
