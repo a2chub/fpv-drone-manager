@@ -9,6 +9,7 @@ import { DroneListPage } from './pages/drones/DroneListPage'
 import { DroneDetailPage } from './pages/drones/DroneDetailPage'
 import { DroneFormPage } from './pages/drones/DroneFormPage'
 import { RaceListPage, RaceDetailPage, RaceFormPage } from './pages/races'
+import { MaintenanceListPage, MaintenancePostPage, MaintenancePostDetailPage, PublicMaintenancePost } from './pages/maintenance'
 import { PartDetailPage } from './pages/parts'
 import { EventListPage, EventDetailPage, EventFormPage, EventAlbumPage } from './pages/events'
 import { UserListPage } from './pages/users'
@@ -45,6 +46,9 @@ function App() {
         {/* Public event route */}
         <Route path="/e/:eventId" element={<PublicEvent />} />
 
+        {/* Public maintenance post route */}
+        <Route path="/u/:userId/maintenance/:postId" element={<PublicMaintenancePost />} />
+
         {/* Public user list */}
         <Route path="/users" element={<UserListPage />} />
 
@@ -60,6 +64,9 @@ function App() {
           <Route path="/races/new" element={<RaceFormPage />} />
           <Route path="/races/:raceId" element={<RaceDetailPage />} />
           <Route path="/races/:raceId/edit" element={<RaceFormPage />} />
+          <Route path="/maintenance" element={<MaintenanceListPage />} />
+          <Route path="/maintenance/new" element={<MaintenancePostPage />} />
+          <Route path="/maintenance/:postId" element={<MaintenancePostDetailPage />} />
           <Route path="/events" element={<EventListPage />} />
           <Route path="/events/new" element={<EventFormPage />} />
           <Route path="/events/:eventId" element={<EventDetailPage />} />

@@ -1,11 +1,16 @@
+import { useState } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { usePublicUser, usePublicDrones, usePublicRaces, usePublicEventHistory } from '@/hooks/usePublicData'
+import { usePublicUserMaintenancePosts } from '@/hooks/useMaintenancePosts'
 import { useAuth } from '@/contexts/AuthContext'
 import { ContentGate } from '@/components/common'
 import { FollowButton, ProfileComments } from '@/components/user'
+import { MaintenancePostCardCompact } from '@/components/maintenance/MaintenancePostCard'
 import type { Drone, Race } from '@/types'
 import { RACE_CATEGORIES } from '@/types'
 import type { PublicEventParticipation } from '@/services/publicService'
+
+type ProfileTab = 'drones' | 'races' | 'events' | 'maintenance'
 
 // 名前を部分的に隠すヘルパー関数
 function maskName(name: string): string {
@@ -231,6 +236,7 @@ export function PublicProfile() {
   const { userId } = useParams<{ userId: string }>()
   const { isAuthenticated } = useAuth()
   const { data: user, isLoading: userLoading, error: userError } = usePublicUser(userId)
+  const [activeTab, setActiveTab] = useState<ProfileTab>('drones')
 
   // プロフィールが公開されているか確認
   const isProfilePublic = user?.settings?.isProfilePublic ?? true
@@ -242,8 +248,11 @@ export function PublicProfile() {
   const { data: events, isLoading: eventsLoading } = usePublicEventHistory(
     isProfilePublic && showEventHistory ? userId : undefined
   )
+  const { data: maintenancePosts, isLoading: maintenanceLoading } = usePublicUserMaintenancePosts(
+    isProfilePublic ? userId : undefined
+  )
 
-  const isLoading = userLoading || (isProfilePublic && (dronesLoading || racesLoading || (showEventHistory && eventsLoading)))
+  const isLoading = userLoading || (isProfilePublic && (dronesLoading || racesLoading || maintenanceLoading || (showEventHistory && eventsLoading)))
 
   if (isLoading) {
     return (
@@ -483,74 +492,159 @@ export function PublicProfile() {
           '他のパイロットと繋がる',
         ]}
       >
-        {/* Public Drones */}
-        <section className="mb-8">
-          <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4">
-            公開機体
-          </h2>
-          {drones && drones.length > 0 ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              {drones.map((drone) => (
-                <PublicDroneCard key={drone.id} drone={drone} userId={userId!} />
-              ))}
-            </div>
-          ) : (
-            <div className="card p-8 text-center dark:bg-gray-800">
-              <svg
-                className="w-12 h-12 text-gray-300 dark:text-gray-600 mx-auto mb-4"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
+        {/* タブナビゲーション */}
+        <div className="border-b border-gray-200 dark:border-gray-700 mb-6">
+          <nav className="-mb-px flex space-x-8 overflow-x-auto" aria-label="Tabs">
+            <button
+              onClick={() => setActiveTab('drones')}
+              className={`whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
+                activeTab === 'drones'
+                  ? 'border-primary-500 text-primary-600 dark:text-primary-400'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300'
+              }`}
+            >
+              <span className="flex items-center gap-2">
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+                </svg>
+                ドローン
+                {drones && drones.length > 0 && (
+                  <span className="ml-1 px-2 py-0.5 text-xs rounded-full bg-gray-100 dark:bg-gray-700">
+                    {drones.length}
+                  </span>
+                )}
+              </span>
+            </button>
+            <button
+              onClick={() => setActiveTab('races')}
+              className={`whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
+                activeTab === 'races'
+                  ? 'border-primary-500 text-primary-600 dark:text-primary-400'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300'
+              }`}
+            >
+              <span className="flex items-center gap-2">
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 21v-4m0 0V5a2 2 0 012-2h6.5l1 1H21l-3 6 3 6h-8.5l-1-1H5a2 2 0 00-2 2zm9-13.5V9" />
+                </svg>
+                レース
+                {races && races.length > 0 && (
+                  <span className="ml-1 px-2 py-0.5 text-xs rounded-full bg-gray-100 dark:bg-gray-700">
+                    {races.length}
+                  </span>
+                )}
+              </span>
+            </button>
+            {showEventHistory && (
+              <button
+                onClick={() => setActiveTab('events')}
+                className={`whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
+                  activeTab === 'events'
+                    ? 'border-primary-500 text-primary-600 dark:text-primary-400'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300'
+                }`}
               >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"
-                />
-              </svg>
-              <p className="text-gray-500 dark:text-gray-400">公開されている機体はありません</p>
-            </div>
-          )}
-        </section>
+                <span className="flex items-center gap-2">
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                  </svg>
+                  参加イベント
+                  {events && events.length > 0 && (
+                    <span className="ml-1 px-2 py-0.5 text-xs rounded-full bg-gray-100 dark:bg-gray-700">
+                      {events.length}
+                    </span>
+                  )}
+                </span>
+              </button>
+            )}
+            <button
+              onClick={() => setActiveTab('maintenance')}
+              className={`whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
+                activeTab === 'maintenance'
+                  ? 'border-primary-500 text-primary-600 dark:text-primary-400'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300'
+              }`}
+            >
+              <span className="flex items-center gap-2">
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
+                整備記録
+                {maintenancePosts && maintenancePosts.length > 0 && (
+                  <span className="ml-1 px-2 py-0.5 text-xs rounded-full bg-gray-100 dark:bg-gray-700">
+                    {maintenancePosts.length}
+                  </span>
+                )}
+              </span>
+            </button>
+          </nav>
+        </div>
 
-        {/* Public Races */}
-        <section className="mb-8">
-          <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4">
-            公開レース
-          </h2>
-          {races && races.length > 0 ? (
-            <div className="space-y-3">
-              {races.map((race) => (
-                <PublicRaceCard key={race.id} race={race} userId={userId!} />
-              ))}
-            </div>
-          ) : (
-            <div className="card p-8 text-center dark:bg-gray-800">
-              <svg
-                className="w-12 h-12 text-gray-300 dark:text-gray-600 mx-auto mb-4"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M3 21v-4m0 0V5a2 2 0 012-2h6.5l1 1H21l-3 6 3 6h-8.5l-1-1H5a2 2 0 00-2 2zm9-13.5V9"
-                />
-              </svg>
-              <p className="text-gray-500 dark:text-gray-400">公開されているレースはありません</p>
-            </div>
-          )}
-        </section>
-
-        {/* Public Event History */}
-        {showEventHistory && (
+        {/* タブコンテンツ */}
+        {/* ドローンタブ */}
+        {activeTab === 'drones' && (
           <section>
-            <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4">
-              参加イベント履歴
-            </h2>
+            {drones && drones.length > 0 ? (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {drones.map((drone) => (
+                  <PublicDroneCard key={drone.id} drone={drone} userId={userId!} />
+                ))}
+              </div>
+            ) : (
+              <div className="card p-8 text-center dark:bg-gray-800">
+                <svg
+                  className="w-12 h-12 text-gray-300 dark:text-gray-600 mx-auto mb-4"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"
+                  />
+                </svg>
+                <p className="text-gray-500 dark:text-gray-400">公開されている機体はありません</p>
+              </div>
+            )}
+          </section>
+        )}
+
+        {/* レースタブ */}
+        {activeTab === 'races' && (
+          <section>
+            {races && races.length > 0 ? (
+              <div className="space-y-3">
+                {races.map((race) => (
+                  <PublicRaceCard key={race.id} race={race} userId={userId!} />
+                ))}
+              </div>
+            ) : (
+              <div className="card p-8 text-center dark:bg-gray-800">
+                <svg
+                  className="w-12 h-12 text-gray-300 dark:text-gray-600 mx-auto mb-4"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M3 21v-4m0 0V5a2 2 0 012-2h6.5l1 1H21l-3 6 3 6h-8.5l-1-1H5a2 2 0 00-2 2zm9-13.5V9"
+                  />
+                </svg>
+                <p className="text-gray-500 dark:text-gray-400">公開されているレースはありません</p>
+              </div>
+            )}
+          </section>
+        )}
+
+        {/* 参加イベントタブ */}
+        {activeTab === 'events' && showEventHistory && (
+          <section>
             {events && events.length > 0 ? (
               <div className="space-y-3">
                 {events.map((event) => (
@@ -573,6 +667,42 @@ export function PublicProfile() {
                   />
                 </svg>
                 <p className="text-gray-500 dark:text-gray-400">公開されている参加イベントはありません</p>
+              </div>
+            )}
+          </section>
+        )}
+
+        {/* 整備記録タブ */}
+        {activeTab === 'maintenance' && (
+          <section>
+            {maintenancePosts && maintenancePosts.length > 0 ? (
+              <div className="space-y-3">
+                {maintenancePosts.map((post) => (
+                  <MaintenancePostCardCompact key={post.id} post={post} />
+                ))}
+              </div>
+            ) : (
+              <div className="card p-8 text-center dark:bg-gray-800">
+                <svg
+                  className="w-12 h-12 text-gray-300 dark:text-gray-600 mx-auto mb-4"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"
+                  />
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                  />
+                </svg>
+                <p className="text-gray-500 dark:text-gray-400">公開されている整備記録はありません</p>
               </div>
             )}
           </section>

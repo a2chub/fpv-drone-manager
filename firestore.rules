@@ -205,5 +205,87 @@ service cloud.firestore {
         }
       }
     }
+
+    // Maintenance Posts collection (top-level for public search)
+    match /maintenancePosts/{postId} {
+      // Helper to check if user is post author
+      function isPostAuthor() {
+        return isAuthenticated() && resource.data.userId == request.auth.uid;
+      }
+
+      function isPostAuthorOnCreate() {
+        return isAuthenticated() && request.resource.data.userId == request.auth.uid;
+      }
+
+      function isPostReadable() {
+        return resource.data.isPublic == true || isPostAuthor();
+      }
+
+      // Read: public posts are readable by anyone, private posts only by author
+      allow read: if resource.data.isPublic == true || isPostAuthor();
+      // Create: authenticated users can create (must be author)
+      allow create: if isPostAuthorOnCreate();
+      // Update/Delete: only author
+      allow update, delete: if isPostAuthor();
+
+      // Comments subcollection
+      match /comments/{commentId} {
+        function isCommentAuthor() {
+          return isAuthenticated() && resource.data.authorId == request.auth.uid;
+        }
+
+        function isCommentAuthorOnCreate() {
+          return isAuthenticated() && request.resource.data.authorId == request.auth.uid;
+        }
+
+        function getParentPost() {
+          return get(/databases/$(database)/documents/maintenancePosts/$(postId)).data;
+        }
+
+        function isParentPostReadable() {
+          let post = getParentPost();
+          return post.isPublic == true || post.userId == request.auth.uid;
+        }
+
+        // Read: anyone can read if parent post is readable
+        allow read: if isParentPostReadable();
+        // Create: authenticated users can create comments
+        allow create: if isAuthenticated() && isCommentAuthorOnCreate();
+        // Update: only comment author, and only isDeleted field can be changed
+        allow update: if isCommentAuthor() &&
+                        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['isDeleted', 'updatedAt']);
+        // Hard delete: not allowed (use soft delete instead)
+        allow delete: if false;
+      }
+
+      // Likes subcollection
+      match /likes/{likeId} {
+        function isLikeOwner() {
+          return isAuthenticated() && resource.data.userId == request.auth.uid;
+        }
+
+        function isLikeOwnerOnCreate() {
+          return isAuthenticated() && request.resource.data.userId == request.auth.uid;
+        }
+
+        function getParentPostForLike() {
+          return get(/databases/$(database)/documents/maintenancePosts/$(postId)).data;
+        }
+
+        function isParentPostReadableForLike() {
+          let post = getParentPostForLike();
+          return post.isPublic == true || post.userId == request.auth.uid;
+        }
+
+        // Read: anyone can read likes if parent post is readable
+        allow read: if isParentPostReadableForLike();
+        // Create: authenticated users can create their own like
+        allow create: if isLikeOwnerOnCreate();
+        // Update: not allowed
+        allow update: if false;
+        // Delete: only like owner can delete their own like
+        allow delete: if isLikeOwner();
+      }
+    }
   }
 }

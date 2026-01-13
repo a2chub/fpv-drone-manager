@@ -61,6 +61,13 @@ export function Dashboard() {
             <Zap size={18} />
             <span>フライト記録</span>
           </Link>
+          <Link
+            to="/maintenance/new"
+            className="btn-secondary flex items-center gap-2"
+          >
+            <Wrench size={18} />
+            <span>整備を投稿</span>
+          </Link>
         </div>
       </motion.div>
 
@@ -137,6 +144,10 @@ export function Dashboard() {
           <Link to="/races/new" className="btn-secondary flex-1 justify-center">
             <Zap size={18} className="mr-2" />
             記録
+          </Link>
+          <Link to="/maintenance/new" className="btn-secondary flex-1 justify-center">
+            <Wrench size={18} className="mr-2" />
+            整備
           </Link>
         </div>
       </div>
