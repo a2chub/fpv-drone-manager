@@ -184,3 +184,11 @@ generated/
 
 # Auto Claude data directory
 .auto-claude/
+
+# ===========================================
+# E2E Test
+# ===========================================
+e2e/state/
+e2e/results/*.png
+e2e/results/*.json
+e2e/results/*.html

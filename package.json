@@ -10,7 +10,17 @@
     "lint": "eslint src --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
     "test": "vitest",
     "test:ui": "vitest --ui",
-    "test:coverage": "vitest --coverage"
+    "test:coverage": "vitest --coverage",
+    "e2e": "bash e2e/run-tests.sh",
+    "e2e:smoke": "bash e2e/run-tests.sh smoke",
+    "e2e:feature": "bash e2e/run-tests.sh feature",
+    "e2e:full": "bash e2e/run-tests.sh full",
+    "e2e:drones": "bash e2e/run-tests.sh feature/drones",
+    "e2e:races": "bash e2e/run-tests.sh feature/races",
+    "e2e:events": "bash e2e/run-tests.sh feature/events",
+    "e2e:headed": "E2E_HEADLESS=false bash e2e/run-tests.sh",
+    "e2e:auth": "bash e2e/auth/login.sh",
+    "e2e:parallel": "bash e2e/run-parallel.sh"
   },
   "keywords": [
     "fpv",
@@ -20,6 +30,7 @@
   "author": "",
   "license": "ISC",
   "devDependencies": {
+    "@opentelemetry/api": "^1.9.0",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.1",
     "@types/react": "^19.2.8",
@@ -29,9 +40,11 @@
     "@vitejs/plugin-react": "^5.1.2",
     "autoprefixer": "^10.4.23",
     "eslint": "^9.39.2",
+    "firebase-admin": "^13.6.0",
     "jsdom": "^27.4.0",
     "postcss": "^8.5.6",
     "tailwindcss": "^3.4.19",
+    "tsx": "^4.21.0",
     "typescript": "^5.9.3",
     "vite": "^7.3.1",
     "vitest": "^4.0.16"
