@@ -2,6 +2,8 @@ import { useQuery } from '@tanstack/react-query'
 import { droneService } from '@/services/droneService'
 import { partService } from '@/services/partService'
 import { raceService } from '@/services/raceService'
+import { followService } from '@/services/followService'
+import { activityService } from '@/services/activityService'
 import { useAuth } from '@/contexts/AuthContext'
 import type { Drone } from '@/types'
 
@@ -12,6 +14,8 @@ export interface Stats {
   publicDroneCount: number
   publicRaceCount: number
   recentDrones: Drone[]
+  followingCount: number
+  upcomingEventCount: number
 }
 
 const STATS_QUERY_KEY = 'stats'
@@ -51,6 +55,24 @@ export function useStats() {
       const raceCount = races.length
       const publicRaceCount = races.filter((race) => race.isPublic).length
 
+      // フォロー数を取得
+      let followingCount = 0
+      try {
+        const followingIds = await followService.getFollowingIds(user.id)
+        followingCount = followingIds.length
+      } catch {
+        // フォロー機能が未実装の場合は0
+      }
+
+      // 今後のイベント数を取得
+      let upcomingEventCount = 0
+      try {
+        const events = await activityService.getUpcomingEvents(5)
+        upcomingEventCount = events.length
+      } catch {
+        // イベント機能が未実装の場合は0
+      }
+
       return {
         droneCount: drones.length,
         partCount,
@@ -58,6 +80,8 @@ export function useStats() {
         publicDroneCount,
         publicRaceCount,
         recentDrones,
+        followingCount,
+        upcomingEventCount,
       }
     },
     enabled: !!user,

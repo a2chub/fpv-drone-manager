@@ -33,6 +33,38 @@ export default {
           800: '#262626',
           900: '#171717',
         },
+        // Flight Deck status colors
+        status: {
+          active: '#10B981',
+          warning: '#F59E0B',
+          danger: '#EF4444',
+          inactive: '#6B7280',
+        },
+        // Aviation-inspired accent colors
+        navy: {
+          50: '#f0f4f8',
+          100: '#d9e2ec',
+          200: '#bcccdc',
+          300: '#9fb3c8',
+          400: '#829ab1',
+          500: '#627d98',
+          600: '#486581',
+          700: '#334e68',
+          800: '#243b53',
+          900: '#1E3A5F',
+        },
+        alert: {
+          50: '#fff7ed',
+          100: '#ffedd5',
+          200: '#fed7aa',
+          300: '#fdba74',
+          400: '#fb923c',
+          500: '#FF6B35',
+          600: '#ea580c',
+          700: '#c2410c',
+          800: '#9a3412',
+          900: '#7c2d12',
+        },
       },
       fontFamily: {
         sans: [
@@ -42,6 +74,15 @@ export default {
           '"Noto Sans JP"',
           'sans-serif',
         ],
+        mono: [
+          '"JetBrains Mono"',
+          'ui-monospace',
+          'SFMono-Regular',
+          'Menlo',
+          'Monaco',
+          'Consolas',
+          'monospace',
+        ],
       },
       spacing: {
         '18': '4.5rem',
@@ -49,11 +90,26 @@ export default {
       },
       animation: {
         'fade-in': 'fadeIn 0.3s ease-out',
+        'gauge-fill': 'gaugeFill 1s ease-out forwards',
+        'slide-up': 'slideUp 0.3s ease-out',
+        'pulse-status': 'pulseStatus 2s ease-in-out infinite',
       },
       keyframes: {
         fadeIn: {
           '0%': { opacity: '0' },
           '100%': { opacity: '1' },
+        },
+        gaugeFill: {
+          '0%': { strokeDashoffset: '100' },
+          '100%': { strokeDashoffset: 'var(--gauge-value, 0)' },
+        },
+        slideUp: {
+          '0%': { opacity: '0', transform: 'translateY(10px)' },
+          '100%': { opacity: '1', transform: 'translateY(0)' },
+        },
+        pulseStatus: {
+          '0%, 100%': { opacity: '1' },
+          '50%': { opacity: '0.6' },
         },
       },
     },

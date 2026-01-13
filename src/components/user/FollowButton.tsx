@@ -1,12 +1,20 @@
+import { cn } from '@/lib/utils'
 import { useAuth } from '@/contexts/AuthContext'
 import { useIsFollowing, useFollow, useUnfollow } from '@/hooks/useFollow'
 
 interface FollowButtonProps {
   targetUserId: string
   className?: string
+  size?: 'sm' | 'md' | 'lg'
 }
 
-export function FollowButton({ targetUserId, className = '' }: FollowButtonProps) {
+const sizeClasses = {
+  sm: 'px-3 py-1.5 text-xs',
+  md: 'px-4 py-2 text-sm',
+  lg: 'px-6 py-3 text-base',
+}
+
+export function FollowButton({ targetUserId, className = '', size = 'md' }: FollowButtonProps) {
   const { user, isAuthenticated } = useAuth()
   const { data: isFollowing, isLoading: isCheckingFollow } = useIsFollowing(targetUserId)
   const followMutation = useFollow()
@@ -32,7 +40,11 @@ export function FollowButton({ targetUserId, className = '' }: FollowButtonProps
       <button
         onClick={handleClick}
         disabled={isLoading}
-        className={`px-4 py-2 text-sm font-medium rounded-lg border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors disabled:opacity-50 ${className}`}
+        className={cn(
+          sizeClasses[size],
+          'font-medium rounded-lg border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors disabled:opacity-50',
+          className
+        )}
       >
         {isLoading ? (
           <span className="flex items-center gap-2">
@@ -53,7 +65,11 @@ export function FollowButton({ targetUserId, className = '' }: FollowButtonProps
     <button
       onClick={handleClick}
       disabled={isLoading}
-      className={`px-4 py-2 text-sm font-medium rounded-lg bg-primary-500 text-white hover:bg-primary-600 transition-colors disabled:opacity-50 ${className}`}
+      className={cn(
+        sizeClasses[size],
+        'font-medium rounded-lg bg-primary-500 text-white hover:bg-primary-600 transition-colors disabled:opacity-50',
+        className
+      )}
     >
       {isLoading ? (
         <span className="flex items-center gap-2">

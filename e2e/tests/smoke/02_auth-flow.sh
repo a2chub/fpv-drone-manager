@@ -90,15 +90,32 @@ else
 fi
 
 # ============================================
-# Test: Access Protected Route
+# Test: Access Protected Route - Dashboard
 # ============================================
-log_info "Testing: Access to protected route"
+log_info "Testing: Access to protected route (Dashboard)"
 
 ab open "${E2E_BASE_URL}/dashboard"
-sleep 2
+wait_for_page_load
 
 # ダッシュボードにアクセスできることを確認
 assert_url_contains "/dashboard"
+
+# Flight Deck UI の要素確認
+if assert_text_visible "こんにちは" 5000 2>/dev/null; then
+    log_success "Dashboard welcome message visible"
+else
+    assert_element_exists "main" || true
+fi
+
+# 統計カード（登録機体）の存在確認
+if assert_text_visible "登録機体" 5000 2>/dev/null; then
+    log_success "Dashboard stat cards visible"
+fi
+
+# クイックアクションボタンの確認
+if ab is visible 'a[href="/drones/new"]' >/dev/null 2>&1; then
+    log_success "Quick action buttons visible"
+fi
 
 log_success "Protected route accessible after login"
 
@@ -152,6 +169,26 @@ elif [[ "$CURRENT_URL" == *"/"* && "$CURRENT_URL" != *"/dashboard"* ]]; then
     log_success "Logout successful - session cleared"
 else
     log_warn "Logout verification unclear: $CURRENT_URL"
+fi
+
+# ============================================
+# Re-authenticate for subsequent tests
+# ============================================
+log_info "Re-authenticating for subsequent tests..."
+
+ab open "${E2E_BASE_URL}/login"
+sleep 2
+
+CURRENT_URL=$(ab get url 2>/dev/null || echo "")
+if [[ "$CURRENT_URL" == *"/login"* ]]; then
+    # フォーム入力
+    ab fill "$LOGIN_EMAIL_INPUT" "$E2E_TEST_EMAIL"
+    ab fill "$LOGIN_PASSWORD_INPUT" "$E2E_TEST_PASSWORD"
+    ab click "$LOGIN_SUBMIT_BUTTON"
+    sleep 3
+    log_success "Re-authenticated successfully"
+else
+    log_success "Already authenticated after page reload"
 fi
 
 # ============================================

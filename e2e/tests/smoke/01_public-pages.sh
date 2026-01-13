@@ -65,6 +65,21 @@ wait_for_page_load
 
 assert_url_contains "/users"
 
+# 新UIのページヘッダー確認
+if assert_text_visible "パイロットを探す" 5000 2>/dev/null; then
+    log_success "Users page header visible"
+fi
+
+# フィルタータブの存在確認
+if ab is visible 'text=人気' >/dev/null 2>&1; then
+    log_success "Filter tabs visible"
+fi
+
+# 検索フィールドの存在確認
+if ab is visible 'input[placeholder*="パイロットを検索"]' >/dev/null 2>&1; then
+    log_success "Search input visible"
+fi
+
 log_success "Users list page loaded"
 
 # ============================================

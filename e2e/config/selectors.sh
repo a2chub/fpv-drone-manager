@@ -23,11 +23,39 @@ NAV_EVENTS='a[href="/events"]'
 NAV_SETTINGS='a[href="/settings"]'
 
 # ============================================
-# ダッシュボード
+# ダッシュボード（Flight Deck UI）
 # ============================================
 DASHBOARD_WELCOME='text=こんにちは'
-DASHBOARD_STATS='.stats-container'
-DASHBOARD_QUICK_ACTIONS='.quick-actions'
+DASHBOARD_STATS='.panel-card'
+DASHBOARD_QUICK_ACTIONS='a[href="/drones/new"]'
+# Flight Deck 新UI要素
+DASHBOARD_HEALTH_GAUGE='[data-testid="fleet-health-gauge"], .gauge-indicator'
+DASHBOARD_FLEET_OVERVIEW='[data-testid="fleet-overview"], .panel-card'
+DASHBOARD_MAINTENANCE_ALERT='text=整備が必要'
+DASHBOARD_STAT_CARD='text=登録機体'
+DASHBOARD_ACTIVITY_CALENDAR='text=活動カレンダー'
+DASHBOARD_MAINTENANCE_TIMELINE='text=整備記録'
+
+# ============================================
+# ホームページ（認証後）
+# ============================================
+HOME_WELCOME_AUTH='text=おかえりなさい'
+HOME_QUICK_STATS='[data-testid="quick-stats"], .glass'
+HOME_COMMUNITY_HIGHLIGHTS='text=コミュニティハイライト'
+HOME_SUGGESTED_PILOTS='text=おすすめパイロット'
+HOME_UPCOMING_EVENTS='text=今後のイベント'
+
+# ============================================
+# ユーザー一覧ページ
+# ============================================
+USERS_PAGE_HEADER='text=パイロットを探す'
+USERS_FILTER_POPULAR='text=人気'
+USERS_FILTER_RECENT='text=新着'
+USERS_FILTER_NEARBY='text=近く'
+USERS_FILTER_ACTIVE='text=アクティブ'
+USERS_SEARCH_INPUT='input[placeholder*="パイロットを検索"]'
+USERS_FEATURED_PILOT='text=注目のパイロット'
+USERS_CARD_GRID='.grid'
 
 # ============================================
 # ドローン関連（data-testid優先）

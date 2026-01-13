@@ -1,3 +1,6 @@
 export { PublicContentSection } from './PublicContentSection'
 export { UpcomingEvents } from './UpcomingEvents'
 export { ActivityFeed } from './ActivityFeed'
+export { CommunityHighlights } from './CommunityHighlights'
+export { EnhancedActivityCard, ActivityCardCompact } from './EnhancedActivityCard'
+export { SuggestedPilots, FeaturedPilotCard } from './SuggestedPilots'

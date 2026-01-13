@@ -1,3 +1,5 @@
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -150,4 +152,103 @@
 /* ノイズテクスチャ（SVG base64） */
 .noise-texture {
   background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+}
+
+/* ==============================================
+   Flight Deck Design System
+   ============================================== */
+
+/* Status Badge Styles */
+.status-badge {
+  @apply inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border;
+}
+
+.status-badge-active {
+  @apply bg-status-active/10 text-status-active border-status-active/30;
+}
+
+.status-badge-warning {
+  @apply bg-status-warning/10 text-status-warning border-status-warning/30;
+}
+
+.status-badge-danger {
+  @apply bg-status-danger/10 text-status-danger border-status-danger/30;
+}
+
+.status-badge-inactive {
+  @apply bg-status-inactive/10 text-status-inactive border-status-inactive/30;
+}
+
+/* Maintenance Log Entry Styles */
+.log-entry {
+  @apply pl-4 border-l-4 py-2;
+}
+
+.log-entry-usage {
+  @apply border-l-blue-500;
+}
+
+.log-entry-repair {
+  @apply border-l-red-500;
+}
+
+.log-entry-adjustment {
+  @apply border-l-amber-500;
+}
+
+.log-entry-replacement {
+  @apply border-l-emerald-500;
+}
+
+.log-entry-note {
+  @apply border-l-gray-400;
+}
+
+/* Stat Card with Monospace Numbers */
+.stat-value {
+  @apply font-mono text-2xl font-semibold tabular-nums;
+}
+
+.stat-value-lg {
+  @apply font-mono text-4xl font-bold tabular-nums;
+}
+
+/* Gauge Indicator Base */
+.gauge-ring {
+  @apply stroke-current;
+  stroke-linecap: round;
+  fill: none;
+  transform: rotate(-90deg);
+  transform-origin: center;
+}
+
+/* Panel Card (Aviation Cockpit Style) */
+.panel-card {
+  @apply bg-navy-900/5 dark:bg-navy-900/30 rounded-xl border border-navy-200/50 dark:border-navy-700/50 p-4;
+}
+
+.panel-card-header {
+  @apply text-xs font-mono uppercase tracking-wider text-navy-600 dark:text-navy-400 mb-2;
+}
+
+/* Activity Indicator Dot */
+.activity-dot {
+  @apply w-2 h-2 rounded-full;
+}
+
+.activity-dot-active {
+  @apply bg-status-active animate-pulse-status;
+}
+
+.activity-dot-idle {
+  @apply bg-status-inactive;
+}
+
+/* Timeline Connector */
+.timeline-connector {
+  @apply absolute left-4 top-8 bottom-0 w-0.5 bg-gray-200 dark:bg-gray-700;
+}
+
+.timeline-dot {
+  @apply absolute left-2.5 top-2 w-3 h-3 rounded-full border-2 border-white dark:border-gray-800;
 }
