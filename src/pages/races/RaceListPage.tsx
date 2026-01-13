@@ -77,7 +77,7 @@ export function RaceListPage() {
       />
 
       {filteredRaces.length > 0 ? (
-        <div className="space-y-4">
+        <div className="space-y-4" data-testid="race-list">
           {filteredRaces.map((race) => (
             <RaceCard
               key={race.id}

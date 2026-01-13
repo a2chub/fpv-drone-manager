@@ -30,7 +30,7 @@ export function RaceCard({ race, onEdit, onDelete, onTogglePublic }: RaceCardPro
       : null
 
   return (
-    <div className="card p-4 hover:shadow-md transition-shadow">
+    <div className="card p-4 hover:shadow-md transition-shadow" data-testid={`race-card-${race.id}`}>
       <div className="flex items-start gap-4">
         {/* Image */}
         <div className="w-16 h-16 bg-gray-100 dark:bg-gray-700 rounded-lg flex-shrink-0 overflow-hidden">
