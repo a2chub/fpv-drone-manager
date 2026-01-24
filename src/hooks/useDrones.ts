@@ -80,3 +80,15 @@ export function useToggleDronePublic() {
     },
   })
 }
+
+export function useCopyDrone() {
+  const { user } = useAuth()
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: (droneId: string) => droneService.copyDrone(user!.id, droneId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [DRONES_QUERY_KEY, user?.id] })
+    },
+  })
+}
