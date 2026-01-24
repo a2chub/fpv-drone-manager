@@ -1,5 +1,6 @@
+import { useState } from 'react'
 import { useParams, Link, useNavigate } from 'react-router-dom'
-import { useDrone, useDeleteDrone } from '@/hooks/useDrones'
+import { useDrone, useDeleteDrone, useCopyDrone } from '@/hooks/useDrones'
 import { PartList } from '@/components/parts'
 import { DroneRaceList } from '@/components/race'
 
@@ -22,11 +23,35 @@ export function DroneDetailPage() {
   const navigate = useNavigate()
   const { data: drone, isLoading, error } = useDrone(droneId)
   const deleteMutation = useDeleteDrone()
+  const copyMutation = useCopyDrone()
+  const [isCopying, setIsCopying] = useState(false)
 
   const handleDelete = async () => {
     if (confirm('この機体を削除しますか？関連するパーツ情報も削除されます。')) {
       await deleteMutation.mutateAsync(droneId!)
       navigate('/drones')
+    }
+  }
+
+  const handleCopy = async () => {
+    if (!confirm('この機体をコピーしますか？パーツ情報と画像もコピーされます。')) {
+      return
+    }
+
+    setIsCopying(true)
+    try {
+      const result = await copyMutation.mutateAsync(droneId!)
+      alert(
+        `機体をコピーしました。\n` +
+          `コピーされたパーツ: ${result.copiedPartsCount}件\n` +
+          `新しい機体の詳細ページに移動します。`
+      )
+      navigate(`/drones/${result.droneId}`)
+    } catch (err) {
+      console.error('機体コピーエラー:', err)
+      alert('機体のコピーに失敗しました。')
+    } finally {
+      setIsCopying(false)
     }
   }
 
@@ -63,6 +88,39 @@ export function DroneDetailPage() {
           機体一覧に戻る
         </Link>
         <div className="flex items-center gap-2">
+          <button
+            onClick={handleCopy}
+            disabled={isCopying}
+            className="btn-outline text-primary-500 border-primary-300 hover:bg-primary-50 dark:border-primary-700 dark:hover:bg-primary-900/30 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {isCopying ? (
+              <>
+                <svg
+                  className="animate-spin -ml-1 mr-2 h-4 w-4"
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                >
+                  <circle
+                    className="opacity-25"
+                    cx="12"
+                    cy="12"
+                    r="10"
+                    stroke="currentColor"
+                    strokeWidth="4"
+                  />
+                  <path
+                    className="opacity-75"
+                    fill="currentColor"
+                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                  />
+                </svg>
+                コピー中...
+              </>
+            ) : (
+              '複製'
+            )}
+          </button>
           <Link to={`/drones/${droneId}/edit`} className="btn-secondary">
             編集
           </Link>

@@ -3,6 +3,7 @@ import {
   uploadBytes,
   getDownloadURL,
   deleteObject,
+  getBytes,
 } from 'firebase/storage'
 import { storage } from './config'
 import type { MediaItem } from '@/types/media'
@@ -115,6 +116,40 @@ export const getVideoDuration = (file: File): Promise<number> => {
 
     video.src = URL.createObjectURL(file)
   })
+}
+
+// 画像をコピー（別パスに複製）
+export const copyImage = async (
+  sourceUrl: string,
+  userId: string,
+  destPath: string
+): Promise<string> => {
+  // Firebase Storage URLからソース参照を作成
+  const sourceRef = ref(storage, sourceUrl)
+
+  // ソース画像をダウンロード
+  const bytes = await getBytes(sourceRef)
+
+  // 新しいパスにアップロード
+  const timestamp = Date.now()
+  const originalFilename = sourceUrl.split('/').pop()?.split('?')[0] || 'image'
+  const decodedFilename = decodeURIComponent(originalFilename)
+  const filename = `${timestamp}_copy_${decodedFilename}`
+  const destRef = ref(storage, `users/${userId}/${destPath}/${filename}`)
+
+  await uploadBytes(destRef, bytes)
+  return getDownloadURL(destRef)
+}
+
+// 複数画像をコピー
+export const copyMultipleImages = async (
+  sourceUrls: string[],
+  userId: string,
+  destPath: string
+): Promise<string[]> => {
+  if (sourceUrls.length === 0) return []
+  const copyPromises = sourceUrls.map((url) => copyImage(url, userId, destPath))
+  return Promise.all(copyPromises)
 }
 
 // ファイルバリデーション
